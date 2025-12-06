@@ -13,7 +13,9 @@ export declare class AuthService {
             name: string;
             phone: string;
             role: string;
-            status: number;
         };
+    }>;
+    resetPassword(username: string, newPassword: string): Promise<{
+        message: string;
     }>;
 }

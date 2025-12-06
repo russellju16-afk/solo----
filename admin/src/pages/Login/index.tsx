@@ -18,7 +18,8 @@ const Login: React.FC = () => {
     setLoading(true)
     try {
       const response = await http.post('/api/auth/login', values)
-      const { token, userInfo } = response.data
+      // 响应拦截器已经返回了response.data，所以直接从response中解构
+      const { token, userInfo } = response
       
       // 保存token到localStorage
       localStorage.setItem('token', token)
@@ -27,8 +28,17 @@ const Login: React.FC = () => {
       // 跳转到首页
       message.success('登录成功')
       navigate('/')
-    } catch (error) {
-      message.error('登录失败，请检查用户名和密码')
+    } catch (error: any) {
+      // 提取更具体的错误信息
+      let errorMessage = '登录失败，请检查用户名和密码'
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      } else {
+        errorMessage = '服务器错误，请稍后重试'
+      }
+      message.error(errorMessage)
     } finally {
       setLoading(false)
     }

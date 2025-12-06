@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 // 创建axios实例
-const http: AxiosInstance = axios.create({
+const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/', // 从环境变量获取baseURL
   timeout: 10000, // 10秒超时
   headers: {
@@ -11,7 +11,7 @@ const http: AxiosInstance = axios.create({
 
 // 请求拦截器
 http.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     // 可以在这里添加token等认证信息
     return config;
   },
@@ -22,7 +22,7 @@ http.interceptors.request.use(
 
 // 响应拦截器
 http.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response) => {
     return response;
   },
   (error) => {

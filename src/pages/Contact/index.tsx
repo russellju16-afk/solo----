@@ -1,6 +1,7 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 import { PhoneOutlined, MailOutlined, EnvironmentOutlined, ClockCircleOutlined, WechatOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
 import { LeadForm } from '@/components/forms/LeadForm'
 
 const Contact: React.FC = () => {

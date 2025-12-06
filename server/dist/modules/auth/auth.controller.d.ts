@@ -11,8 +11,13 @@ export declare class AuthController {
             name: string;
             phone: string;
             role: string;
-            status: number;
         };
+    }>;
+    resetPassword(body: {
+        username: string;
+        newPassword: string;
+    }): Promise<{
+        message: string;
     }>;
     getProfile(req: any): Promise<any>;
 }

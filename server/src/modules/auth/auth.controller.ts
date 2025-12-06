@@ -12,6 +12,12 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Post('reset-password')
+  async resetPassword(@Body() body: { username: string; newPassword: string }) {
+    const { username, newPassword } = body;
+    return this.authService.resetPassword(username, newPassword);
+  }
+
   @Get('profile')
   @UseGuards(AuthGuard('jwt'))
   async getProfile(@Body() req) {
