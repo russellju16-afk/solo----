@@ -90,11 +90,9 @@ export class FeishuService {
     }
 
     try {
-      const title = '【新官网线索】' + (lead.companyName || lead.company_name || lead.name);
-
       const channelMap: Record<string, string> = {
         university: '高校',
-        group_catering: '团餐公司',
+        group_catering: '团餐',
         social_restaurant: '社会餐饮',
         supermarket: '商超',
         food_factory: '食品厂',
@@ -104,20 +102,54 @@ export class FeishuService {
       };
 
       const channelType = lead.channelType || lead.channel_type;
-      const channelLabel = channelMap[channelType] ?? channelType;
+      const channelLabel = channelMap[channelType] ?? channelType ?? '其他';
+
+      const categoryMap: Record<string, string> = {
+        rice: '大米',
+        flour: '面粉',
+        oil: '食用油',
+        other: '其他',
+      };
+
+      const sourceMap: Record<string, string> = {
+        home_short_form: '官网首页表单',
+        contact_page: '联系我们页',
+        product_detail: '产品详情页',
+      };
+
+      const volumeMap: Record<string, string> = {
+        lt_5t: '月采购 <5 吨',
+        between_5_20t: '月采购 5-20 吨',
+        gt_20t: '月采购 >20 吨',
+      };
+
+      const categories = (lead.interestedCategories || lead.interested_categories) || [];
+      const categoryLabel = categories.length
+        ? categories.map((item: string) => categoryMap[item] ?? item).join(' / ')
+        : '未填写';
+
+      const monthlyVolumeLabel = volumeMap[lead.monthlyVolumeSegment || lead.monthly_volume_segment] 
+        || lead.monthlyVolumeSegment 
+        || lead.monthly_volume_segment 
+        || '未填写';
+
+      const title = '【新官网线索】' + (lead.companyName || lead.company_name || '未填写公司名称');
+      const sourceLabel = sourceMap[lead.source] ?? lead.source ?? '未知来源';
+      const contactName = lead.name || '未留姓名';
+      const phone = lead.phone || '未留电话';
+      const intention = `意向品类：${categoryLabel}`;
+      const monthlyVolume = `月采购量区间：${monthlyVolumeLabel}`;
 
       const textLines = [
-        `来源：${lead.source}`,
+        `来源：${sourceLabel}`,
         `渠道类型：${channelLabel}`,
-        `姓名：${lead.name}`,
-        `公司：${lead.companyName || lead.company_name || '未知'}`,
-        `电话：${lead.phone}`,
+        `公司名称：${lead.companyName || lead.company_name || '未填写公司名称'}`,
+        `联系人：${contactName}`,
+        `手机号：${phone}`,
         lead.city ? `城市：${lead.city}` : '',
+        intention,
+        monthlyVolume,
         lead.productId || lead.product_id ? `关联产品ID：${lead.productId || lead.product_id}` : '',
-        (lead.interestedCategories || lead.interested_categories)?.length
-          ? `意向品类：${(lead.interestedCategories || lead.interested_categories).join(', ')}`
-          : '',
-        (lead.monthlyVolumeSegment || lead.monthly_volume_segment) ? `月采购量区间：${lead.monthlyVolumeSegment || lead.monthly_volume_segment}` : '',
         (lead.brandRequirement || lead.brand_requirement) ? `品牌/规格需求：${lead.brandRequirement || lead.brand_requirement}` : '',
         lead.description ? `需求描述：${lead.description}` : '',
       ].filter(Boolean);

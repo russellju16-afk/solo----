@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
@@ -8,6 +8,8 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Injectable()
 export class LeadService {
+  private readonly logger = new Logger(LeadService.name);
+
   constructor(
     @InjectRepository(Lead) private leadRepository: Repository<Lead>,
     private userService: UserService,
@@ -99,7 +101,7 @@ export class LeadService {
       await this.feishuService.sendLeadNotification(savedLead);
     } catch (error) {
       // 飞书通知失败不影响主线流程，只记录日志
-      console.error('发送飞书线索通知失败:', error);
+      this.logger.error('发送飞书线索通知失败', error.stack || error.message);
     }
     
     return savedLead;

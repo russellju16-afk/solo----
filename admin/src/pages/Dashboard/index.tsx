@@ -13,7 +13,7 @@ const Dashboard: React.FC = () => {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Title level={2} style={{ margin: 0 }}>超群粮油统一后台</Title>
           <Paragraph style={{ fontSize: '18px', color: '#666' }}>
-            当前阶段仅开放登录和基础后台框架，线索管理等功能将逐步在此后台中建设。
+            这里是西安超群粮油贸易有限公司官网后台，已开放线索管理、产品管理、内容管理、公司信息配置、飞书配置、用户与操作日志等模块，所有后台能力都集中在这一套 admin 应用中。
           </Paragraph>
           {user && (
             <Text strong style={{ fontSize: '16px' }}>

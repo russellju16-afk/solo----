@@ -6,6 +6,17 @@ import Login from './pages/Login'
 import Layout from './layouts/MainLayout'
 import Dashboard from './pages/Dashboard'
 import LeadsList from './pages/Leads/LeadsList'
+import Products from './pages/Products'
+import ProductCategories from './pages/ProductCategories'
+import ProductBrands from './pages/ProductBrands'
+import Banners from './pages/Banners'
+import News from './pages/News'
+import Cases from './pages/Cases'
+import Solutions from './pages/Solutions'
+import CompanyInfo from './pages/CompanyInfo'
+import FeishuConfig from './pages/FeishuConfig'
+import Users from './pages/Users'
+import OperationLogs from './pages/OperationLogs'
 
 function App() {
   return (
@@ -20,12 +31,22 @@ function App() {
             <Route index element={<Dashboard />} />
             {/* 线索管理 */}
             <Route path="leads" element={<LeadsList />} />
-            {/* 未来会在统一后台应用里恢复其他功能 */}
-            {/* 产品相关：products、product-categories、product-brands */}
-            {/* 内容管理：banners、news、cases、solutions */}
-            {/* 公司信息：company-info */}
-            {/* 飞书配置：feishu-config */}
-            {/* 系统设置：users、operation-logs */}
+            {/* 产品相关 */}
+            <Route path="products" element={<Products />} />
+            <Route path="product-categories" element={<ProductCategories />} />
+            <Route path="product-brands" element={<ProductBrands />} />
+            {/* 内容管理 */}
+            <Route path="banners" element={<Banners />} />
+            <Route path="news" element={<News />} />
+            <Route path="cases" element={<Cases />} />
+            <Route path="solutions" element={<Solutions />} />
+            {/* 公司信息 */}
+            <Route path="company-info" element={<CompanyInfo />} />
+            {/* 飞书配置 */}
+            <Route path="feishu-config" element={<FeishuConfig />} />
+            {/* 系统设置 */}
+            <Route path="users" element={<Users />} />
+            <Route path="operation-logs" element={<OperationLogs />} />
           </Route>
         </Routes>
       </Router>

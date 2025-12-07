@@ -1,7 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
+import type { MenuProps } from 'antd'
 import { Layout as AntLayout, Menu, Avatar, Dropdown, Button } from 'antd'
-import { UserOutlined, LogoutOutlined, DashboardOutlined, TeamOutlined } from '@ant-design/icons'
+import {
+  UserOutlined,
+  LogoutOutlined,
+  DashboardOutlined,
+  TeamOutlined,
+  AppstoreOutlined,
+  TagsOutlined,
+  TrademarkCircleOutlined,
+  ReadOutlined,
+  PictureOutlined,
+  FileTextOutlined,
+  BulbOutlined,
+  HomeOutlined,
+  MessageOutlined,
+  SettingOutlined,
+  UserSwitchOutlined,
+  FileSearchOutlined,
+} from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
 
@@ -42,8 +60,26 @@ const MainLayout: React.FC = () => {
     },
   ]
 
-  // 侧边栏菜单
-  const menuItems = [
+  const routeKeys = React.useMemo(
+    () => [
+      '/',
+      '/leads',
+      '/products',
+      '/product-categories',
+      '/product-brands',
+      '/banners',
+      '/news',
+      '/cases',
+      '/solutions',
+      '/company-info',
+      '/feishu-config',
+      '/users',
+      '/operation-logs',
+    ],
+    [],
+  )
+
+  const menuItems: MenuProps['items'] = [
     {
       key: '/',
       icon: <DashboardOutlined />,
@@ -54,7 +90,72 @@ const MainLayout: React.FC = () => {
       icon: <TeamOutlined />,
       label: '线索管理',
     },
+    {
+      key: 'products',
+      icon: <AppstoreOutlined />,
+      label: '产品管理',
+      children: [
+        { key: '/products', label: '产品列表', icon: <AppstoreOutlined /> },
+        { key: '/product-categories', label: '产品分类', icon: <TagsOutlined /> },
+        { key: '/product-brands', label: '品牌管理', icon: <TrademarkCircleOutlined /> },
+      ],
+    },
+    {
+      key: 'content',
+      icon: <ReadOutlined />,
+      label: '内容管理',
+      children: [
+        { key: '/banners', label: 'Banner 管理', icon: <PictureOutlined /> },
+        { key: '/news', label: '新闻资讯', icon: <FileTextOutlined /> },
+        { key: '/cases', label: '客户案例', icon: <BulbOutlined /> },
+        { key: '/solutions', label: '解决方案', icon: <FileTextOutlined /> },
+      ],
+    },
+    {
+      key: '/company-info',
+      icon: <HomeOutlined />,
+      label: '公司信息',
+    },
+    {
+      key: '/feishu-config',
+      icon: <MessageOutlined />,
+      label: '飞书配置',
+    },
+    {
+      key: 'system',
+      icon: <SettingOutlined />,
+      label: '系统管理',
+      children: [
+        { key: '/users', label: '用户管理', icon: <UserSwitchOutlined /> },
+        { key: '/operation-logs', label: '操作日志', icon: <FileSearchOutlined /> },
+      ],
+    },
   ]
+
+  const selectedKey = React.useMemo(() => {
+    const matched = routeKeys
+      .filter(key => key !== '/')
+      .find(key => pathname === key || pathname.startsWith(`${key}/`))
+
+    if (matched) return matched
+    return pathname === '/' ? '/' : ''
+  }, [pathname, routeKeys])
+
+  const [openKeys, setOpenKeys] = React.useState<string[]>([])
+
+  React.useEffect(() => {
+    const keys: string[] = []
+    if (['/products', '/product-categories', '/product-brands'].some(key => pathname === key || pathname.startsWith(`${key}/`))) {
+      keys.push('products')
+    }
+    if (['/banners', '/news', '/cases', '/solutions'].some(key => pathname === key || pathname.startsWith(`${key}/`))) {
+      keys.push('content')
+    }
+    if (['/users', '/operation-logs'].some(key => pathname === key || pathname.startsWith(`${key}/`))) {
+      keys.push('system')
+    }
+    setOpenKeys(keys)
+  }, [pathname])
 
   // 菜单点击处理
   const handleMenuClick = (e: any) => {
@@ -76,7 +177,9 @@ const MainLayout: React.FC = () => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={selectedKey ? [selectedKey] : []}
+          openKeys={openKeys}
+          onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
           onClick={handleMenuClick}
         />

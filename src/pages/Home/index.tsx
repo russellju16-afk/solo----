@@ -1,31 +1,65 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Carousel, Typography, Button } from 'antd';
 import { ArrowRightOutlined, ShoppingCartOutlined, SafetyOutlined, TruckOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { LeadForm } from '@/components/forms/LeadForm';
+import { fetchBanners } from '@/services/content';
+import { fetchCompanyInfo } from '@/services/company';
+import { Banner as BannerType } from '@/types/content';
+import { CompanyInfo } from '@/types/company';
 
 const { Title, Paragraph } = Typography;
 const { Meta } = Card;
 
 const Home: React.FC = () => {
-  const carouselItems = [
-    {
-      image: 'https://via.placeholder.com/1200x400/4A90E2/FFFFFF?text=西安超群粮油贸易有限公司',
-      title: '专业粮油贸易服务',
-      description: '为您提供优质的粮油产品和专业的贸易服务',
-    },
-    {
-      image: 'https://via.placeholder.com/1200x400/50E3C2/FFFFFF?text=优质粮油产品',
-      title: '优质粮油产品',
-      description: '精选优质粮油产品，确保食品安全和品质',
-    },
-    {
-      image: 'https://via.placeholder.com/1200x400/F5A623/FFFFFF?text=专业贸易服务',
-      title: '专业贸易服务',
-      description: '多年行业经验，为您提供专业的贸易解决方案',
-    },
-  ];
+  const [banners, setBanners] = useState<BannerType[]>([]);
+  const [loadingBanners, setLoadingBanners] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [loadingCompany, setLoadingCompany] = useState(false);
+
+  useEffect(() => {
+    const loadBanners = async () => {
+      setLoadingBanners(true);
+      try {
+        const data = await fetchBanners();
+        setBanners(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setBanners([]);
+      } finally {
+        setLoadingBanners(false);
+      }
+    };
+
+    const loadCompanyInfo = async () => {
+      setLoadingCompany(true);
+      try {
+        const data = await fetchCompanyInfo();
+        setCompanyInfo(data || null);
+      } catch (error) {
+        setCompanyInfo(null);
+      } finally {
+        setLoadingCompany(false);
+      }
+    };
+
+    loadBanners();
+    loadCompanyInfo();
+  }, []);
+
+  const carouselItems = useMemo(() => banners.map((banner) => ({
+    image: banner.image_url,
+    title: banner.title || companyInfo?.company_name || '超群粮油贸易',
+    description: banner.sub_title || banner.title || companyInfo?.introduction || '西安超群粮油贸易有限公司官网后台',
+  })), [banners, companyInfo]);
+
+  const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司';
+  const companyDescription = loadingCompany
+    ? '公司信息加载中...'
+    : (companyInfo?.introduction || companyInfo?.short_description || '暂时没有配置信息，请稍后查看。');
+  const companyAddress = loadingCompany ? '加载中...' : (companyInfo?.address || '暂未配置');
+  const companyPhone = loadingCompany ? '加载中...' : (companyInfo?.phone || '暂未配置');
+  const companyEmail = loadingCompany ? '加载中...' : (companyInfo?.email || '暂未配置');
 
   const features = [
     {
@@ -48,36 +82,46 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Helmet>
-        <title>西安超群粮油贸易有限公司 - 专业粮油贸易服务</title>
-        <meta name="description" content="西安超群粮油贸易有限公司专业从事粮油产品经销批发，提供优质粮油产品和专业贸易服务。" />
+        <title>{companyName} - 专业粮油贸易服务</title>
+        <meta name="description" content={companyInfo?.introduction || '西安超群粮油贸易有限公司专业从事粮油产品经销批发，提供优质粮油产品和专业贸易服务。'} />
         <meta name="keywords" content="西安超群粮油, 粮油贸易, 粮油批发, 优质粮油" />
       </Helmet>
 
       {/* 轮播图 */}
       <Carousel autoplay className="w-full">
-        {carouselItems.map((item, index) => (
-          <div key={index} className="relative">
-            <img 
-              src={item.image} 
-              alt={item.title} 
-              className="w-full h-[400px] object-cover"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col justify-center items-center text-white p-4">
-              <Title level={2} className="mb-4 text-white">{item.title}</Title>
-              <Paragraph className="text-lg mb-6 max-w-2xl text-center">{item.description}</Paragraph>
-              <Link to="/products">
-                <Button 
-                  type="primary" 
-                  size="large" 
-                  icon={<ArrowRightOutlined />} 
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  了解产品
-                </Button>
-              </Link>
-            </div>
+        {loadingBanners ? (
+          <div className="relative h-[400px] flex items-center justify-center bg-gray-100">
+            <Paragraph className="text-lg mb-0">轮播图加载中...</Paragraph>
           </div>
-        ))}
+        ) : carouselItems.length > 0 ? (
+          carouselItems.map((item, index) => (
+            <div key={index} className="relative">
+              <img 
+                src={item.image || 'https://via.placeholder.com/1200x400/EEF2FF/111111?text=%E8%B6%85%E7%BE%A4%E7%B2%AE%E6%B2%B9'} 
+                alt={item.title} 
+                className="w-full h-[400px] object-cover"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col justify-center items-center text-white p-4">
+                <Title level={2} className="mb-4 text-white">{item.title}</Title>
+                <Paragraph className="text-lg mb-6 max-w-2xl text-center">{item.description}</Paragraph>
+                <Link to="/products">
+                  <Button 
+                    type="primary" 
+                    size="large" 
+                    icon={<ArrowRightOutlined />} 
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    了解产品
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="relative h-[400px] flex items-center justify-center bg-gray-100">
+            <Paragraph className="text-lg mb-0">暂时没有配置轮播图</Paragraph>
+          </div>
+        )}
       </Carousel>
 
       {/* 公司简介 */}
@@ -87,22 +131,26 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
               <img 
-                src="https://via.placeholder.com/600x400/EEEEEE/333333?text=公司简介" 
+                src={companyInfo?.banner_image || 'https://via.placeholder.com/600x400/EEEEEE/333333?text=%E5%85%AC%E5%8F%B8%E7%AE%80%E4%BB%8B'} 
                 alt="公司简介" 
                 className="rounded-lg shadow-md"
               />
             </div>
             <div>
-              <Title level={3} className="mb-4">西安超群粮油贸易有限公司</Title>
+              <Title level={3} className="mb-4">{companyName}</Title>
               <Paragraph className="mb-4">
-                西安超群粮油贸易有限公司成立于2005年，是一家专业从事粮油产品经销批发的企业。公司主要经营各种粮油产品，包括大米、面粉、食用油等，产品远销全国各地。
+                {companyDescription}
               </Paragraph>
-              <Paragraph className="mb-4">
-                公司始终坚持"质量第一、客户至上"的经营理念，以优质的产品和专业的服务赢得了广大客户的信赖和支持。
-              </Paragraph>
-              <Paragraph className="mb-6">
-                我们致力于为客户提供最优质的粮油产品和最专业的贸易服务，期待与您携手合作，共创美好未来！
-              </Paragraph>
+              {companyInfo?.service_areas && (
+                <Paragraph className="mb-4">
+                  服务区域：{companyInfo.service_areas}
+                </Paragraph>
+              )}
+              {companyInfo?.service_channels && (
+                <Paragraph className="mb-6">
+                  服务渠道：{companyInfo.service_channels}
+                </Paragraph>
+              )}
               <Link to="/about">
                 <Button 
                   type="primary" 
@@ -152,7 +200,7 @@ const Home: React.FC = () => {
                 key={item} 
                 hoverable 
                 className="h-full"
-                cover={<img alt={`产品 ${item}`} src={`https://via.placeholder.com/300x200/FFFFFF/333333?text=产品${item}`} />}
+                cover={<img alt={`产品 ${item}`} src={`https://via.placeholder.com/300x200/FFFFFF/333333?text=%E4%BA%A7%E5%93%81${item}`} />}
                 onClick={() => window.location.href = `/products/${item}`}
               >
                 <Meta title={`产品 ${item}`} description="优质粮油产品" />
@@ -166,8 +214,14 @@ const Home: React.FC = () => {
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <Title level={2} className="text-white mb-6">联系我们</Title>
+          <Paragraph className="mb-2 text-lg">
+            电话：{companyPhone}
+          </Paragraph>
+          <Paragraph className="mb-2 text-lg">
+            邮箱：{companyEmail}
+          </Paragraph>
           <Paragraph className="mb-8 text-lg">
-            如果您有任何需求或疑问，欢迎随时联系我们，我们将竭诚为您服务！
+            地址：{companyAddress}
           </Paragraph>
           <Link to="/contact">
                 <Button 

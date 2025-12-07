@@ -16,22 +16,24 @@ const Header: React.FC = () => {
     { label: '联系我们', path: '/contact' }
   ]
 
+  const handleDrawerClose = () => setIsDrawerOpen(false)
+
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-20 gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <div className="text-2xl font-bold text-primary">超群粮油</div>
+          <Link to="/" className="flex items-center" onClick={handleDrawerClose}>
+            <div className="text-2xl font-bold text-primary leading-none">超群粮油</div>
           </Link>
 
           {/* PC Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-[15px]">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className="text-gray-700 hover:text-primary font-medium transition-colors duration-300"
+                className="text-gray-700 hover:text-primary font-medium transition-colors duration-200 px-2 py-1 rounded-md hover:bg-primary/5"
               >
                 {item.label}
               </Link>
@@ -40,14 +42,14 @@ const Header: React.FC = () => {
 
           {/* Contact Button - PC */}
           <div className="hidden md:block">
-            <Link to="/contact" className="primary-button">
+            <Link to="/contact" className="primary-button px-5 py-2 text-sm md:text-base inline-block">
               获取报价
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-gray-700 hover:text-primary"
+            className="md:hidden text-gray-700 hover:text-primary focus:outline-none"
             onClick={() => setIsDrawerOpen(true)}
           >
             <svg
@@ -72,7 +74,7 @@ const Header: React.FC = () => {
       <Drawer
         title="导航菜单"
         placement="right"
-        onClose={() => setIsDrawerOpen(false)}
+        onClose={handleDrawerClose}
         open={isDrawerOpen}
         width={250}
       >
@@ -81,14 +83,14 @@ const Header: React.FC = () => {
             <Link
               key={item.path}
               to={item.path}
-              className="block py-2 px-4 text-gray-700 hover:bg-primary/10 hover:text-primary rounded-md transition-all duration-300"
-              onClick={() => setIsDrawerOpen(false)}
+              className="block py-3 px-4 text-gray-800 hover:bg-primary/10 hover:text-primary rounded-md transition-all duration-200 text-base"
+              onClick={handleDrawerClose}
             >
               {item.label}
             </Link>
           ))}
           <div className="mt-8 px-4">
-            <Link to="/contact" className="primary-button w-full block text-center">
+            <Link to="/contact" className="primary-button w-full block text-center py-3 text-base" onClick={handleDrawerClose}>
               获取报价
             </Link>
           </div>

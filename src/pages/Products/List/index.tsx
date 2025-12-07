@@ -1,101 +1,68 @@
-import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Pagination, Select, Input, Button, Space } from 'antd';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Card, Typography, Row, Col, Pagination, Select, Input, Button, Space, message, Spin, Tag } from 'antd';
 import { SearchOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { fetchProducts } from '@/services/products';
+import { Product } from '@/types/product';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
 const { Option } = Select;
 const { Search } = Input;
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  category: string;
-}
-
 const ProductsList: React.FC = () => {
-  const [products] = useState<Product[]>([
-    {
-      id: 1,
-      name: '优质大米',
-      description: '精选优质大米，口感细腻，营养丰富',
-      price: 50,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=优质大米',
-      category: '粮食',
-    },
-    {
-      id: 2,
-      name: '纯正花生油',
-      description: '纯正花生油，香味浓郁，营养健康',
-      price: 80,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=纯正花生油',
-      category: '食用油',
-    },
-    {
-      id: 3,
-      name: '高筋面粉',
-      description: '高筋面粉，适合制作面包、面条等',
-      price: 40,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=高筋面粉',
-      category: '粮食',
-    },
-    {
-      id: 4,
-      name: '调和油',
-      description: '营养调和油，均衡营养，健康之选',
-      price: 60,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=调和油',
-      category: '食用油',
-    },
-    {
-      id: 5,
-      name: '糯米',
-      description: '优质糯米，适合制作粽子、汤圆等',
-      price: 55,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=糯米',
-      category: '粮食',
-    },
-    {
-      id: 6,
-      name: '大豆油',
-      description: '优质大豆油，富含不饱和脂肪酸',
-      price: 50,
-      image: 'https://via.placeholder.com/300x200/FFFFFF/333333?text=大豆油',
-      category: '食用油',
-    },
-  ]);
-
-  const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
-  const [category, setCategory] = useState('');
-  const [searchText, setSearchText] = useState('');
+  const [categoryId, setCategoryId] = useState<number | undefined>();
+  const [keyword, setKeyword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const categories = ['粮食', '食用油', '其他'];
+  const categoryOptions = useMemo(() => {
+    const options = new Map<number, string>();
+    products.forEach((product) => {
+      if (product.category?.id && product.category?.name) {
+        options.set(product.category.id, product.category.name);
+      }
+    });
+    return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
+  }, [products]);
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = category ? product.category === category : true;
-    const matchesSearch = searchText ? product.name.includes(searchText) || product.description.includes(searchText) : true;
-    return matchesCategory && matchesSearch;
-  });
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await fetchProducts({ page, pageSize, categoryId, keyword });
+      setProducts(resp?.data || []);
+      setTotal(resp?.total || 0);
+    } catch (error) {
+      message.error('获取产品列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, keyword, page, pageSize]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleSearch = (value: string) => {
-    setSearchText(value);
-    setCurrentPage(1);
+    setKeyword(value.trim());
+    setPage(1);
   };
 
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    setCurrentPage(1);
+  const handleCategoryChange = (value: number | undefined) => {
+    setCategoryId(value);
+    setPage(1);
   };
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+  const handlePageChange = (current: number, size?: number) => {
+    setPage(current);
+    if (size && size !== pageSize) {
+      setPageSize(size);
+    }
+  };
 
   return (
     <div className="min-h-screen py-12">
@@ -120,11 +87,13 @@ const ProductsList: React.FC = () => {
             <Select
               placeholder="选择产品类别"
               style={{ width: 200 }}
+              value={categoryId}
               onChange={handleCategoryChange}
               allowClear
             >
-              {categories.map(cat => (
-                <Option key={cat} value={cat}>{cat}</Option>
+              {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
+              {categoryOptions.map((cat) => (
+                <Option key={cat.value} value={cat.value}>{cat.label}</Option>
               ))}
             </Select>
 
@@ -140,67 +109,79 @@ const ProductsList: React.FC = () => {
         </div>
 
         {/* 产品列表 */}
-        <Row gutter={[16, 16]}>
-          {paginatedProducts.map(product => (
-            <Col key={product.id} xs={24} sm={12} md={8}>
-              <Card
-                hoverable
-                cover={<img alt={product.name} src={product.image} className="h-[200px] object-cover" />}
-                actions={[
-                  <ShoppingCartOutlined key="add" />,
-                  <Link to={`/products/${product.id}`}>
-                  <Button 
-                    key="detail" 
-                    type="link"
-                  >
-                    查看详情
-                  </Button>
-                </Link>
-                ]}
-              >
-                <Meta
-                  title={product.name}
-                  description={
-                    <>
-                      <Paragraph ellipsis={{ rows: 2 }}>{product.description}</Paragraph>
-                      <div className="text-red-600 font-bold text-lg">¥{product.price}/件</div>
-                    </>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
+        <Spin spinning={loading} tip="加载产品中...">
+          <Row gutter={[16, 16]}>
+            {products.map(product => (
+              <Col key={product.id} xs={24} sm={12} md={8}>
+                <Card
+                  hoverable
+                  cover={<img alt={product.name} src={product.images?.[0]?.url || 'https://via.placeholder.com/300x200/FFFFFF/333333?text=%E4%BA%A7%E5%93%81'} className="h-[200px] object-cover" />}
+                  actions={[
+                    <ShoppingCartOutlined key="add" />,
+                    <Link to={`/products/${product.id}`} key="detail">
+                      <Button 
+                        type="link"
+                      >
+                        查看详情
+                      </Button>
+                    </Link>,
+                  ]}
+                >
+                  <Meta
+                    title={product.name}
+                    description={
+                      <>
+                        <Paragraph ellipsis={{ rows: 2 }}>{product.description || '暂无产品描述'}</Paragraph>
+                        <div className="text-gray-600 text-sm space-y-1">
+                          {product.spec_weight && (
+                            <Text className="block">规格：{product.spec_weight}</Text>
+                          )}
+                          {product.package_type && (
+                            <Text className="block">包装：{product.package_type}</Text>
+                          )}
+                        </div>
+                        {product.applicable_scenes && product.applicable_scenes.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {product.applicable_scenes.map((scene) => (
+                              <Tag key={scene}>{scene}</Tag>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    }
+                  />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Spin>
 
         {/* 分页 */}
-        {filteredProducts.length > pageSize && (
+        {total > pageSize && (
           <div className="mt-12 flex justify-center">
             <Pagination
-              current={currentPage}
+              current={page}
               pageSize={pageSize}
-              total={filteredProducts.length}
-              onChange={setCurrentPage}
-              onShowSizeChange={(_, size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
+              total={total}
+              onChange={handlePageChange}
+              onShowSizeChange={(_, size) => handlePageChange(1, size)}
               showSizeChanger
               pageSizeOptions={['6', '12', '24']}
-              showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
+              showTotal={(t, range) => `第 ${range[0]}-${range[1]} 条，共 ${t} 条`}
             />
           </div>
         )}
 
         {/* 空状态 */}
-        {filteredProducts.length === 0 && (
+        {!loading && products.length === 0 && (
           <div className="text-center py-20 bg-white rounded-lg shadow-md">
             <Paragraph className="text-gray-500 text-lg">未找到符合条件的产品</Paragraph>
             <Button 
               type="primary" 
               onClick={() => {
-                setCategory('');
-                setSearchText('');
-                setCurrentPage(1);
+                setCategoryId(undefined);
+                setKeyword('');
+                setPage(1);
               }}
             >
               重置筛选条件
