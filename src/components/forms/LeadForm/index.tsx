@@ -13,6 +13,7 @@ import {
 } from 'antd';
 import { ChannelType, CategoryInterest, MonthlyVolumeSegment, LeadPayload } from '@/types/lead';
 import { submitLead } from '@/services/leads';
+import RegionCascader from '@/components/common/RegionCascader';
 
 const { Title } = Typography;
 
@@ -29,7 +30,7 @@ interface LeadFormValues {
   name: string;
   phone: string;
   companyName: string;
-  city?: string;
+  city?: string | string[];
   channelType: ChannelType;
   interestedCategories?: CategoryInterest[];
   monthlyVolumeSegment?: MonthlyVolumeSegment;
@@ -55,11 +56,14 @@ export const LeadForm: React.FC<LeadFormProps> = ({
 
   // 映射表单值到API请求格式
   const mapFormValuesToPayload = (values: LeadFormValues): LeadPayload => {
+    const cityPath = values.city;
+    const cityDisplay = Array.isArray(cityPath) ? cityPath.join('/') : cityPath;
+
     return {
       name: values.name,
       companyName: values.companyName,
       phone: values.phone,
-      city: values.city,
+      city: cityDisplay,
       channelType: values.channelType,
       interestedCategories: values.interestedCategories || [],
       monthlyVolumeSegment: values.monthlyVolumeSegment,
@@ -72,6 +76,12 @@ export const LeadForm: React.FC<LeadFormProps> = ({
 
   // 表单提交处理
   const onSubmit = async (values: LeadFormValues) => {
+    const extractErrorMessage = (error: any) => {
+      const backendMsg = error?.response?.data?.message;
+      if (Array.isArray(backendMsg)) return backendMsg.join('; ');
+      return backendMsg || error?.message || '提交失败，请稍后重试';
+    };
+
     try {
       await submitLead(mapFormValuesToPayload(values));
       message.success('提交成功，我们会尽快联系您');
@@ -80,8 +90,8 @@ export const LeadForm: React.FC<LeadFormProps> = ({
       // 可选：滚动到合适位置
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-      message.error('提交失败，请稍后重试');
-      console.error('提交线索失败:', e);
+      console.error('[LeadForm] submit error', (e as any)?.response?.data || e);
+      message.error(extractErrorMessage(e));
     }
   };
 
@@ -112,12 +122,17 @@ export const LeadForm: React.FC<LeadFormProps> = ({
     { label: '大于 20 吨', value: 'gt_20t' },
   ];
 
+  const onInvalid = () => {
+    message.error('请先填写必填信息');
+  };
+
   return (
     <Card className="w-full">
       <Title level={3} className="text-center mb-4">获取报价</Title>
       <Form
         layout="vertical"
-        onFinish={handleSubmit(onSubmit)}
+        onFinish={handleSubmit(onSubmit, onInvalid)}
+        onFinishFailed={onInvalid}
         className={`space-y-4 ${compact ? 'max-w-md mx-auto' : ''}`}
       >
         {/* 姓名 */}
@@ -203,12 +218,23 @@ export const LeadForm: React.FC<LeadFormProps> = ({
           // 完整版表单字段
           <>
             {/* 所在城市/区县 */}
-            <Form.Item label="所在城市/区县">
+            <Form.Item
+              label="所在城市/区县"
+              validateStatus={errors.city ? 'error' : ''}
+              help={errors.city?.message}
+              required
+            >
               <Controller
                 name="city"
                 control={control}
+                rules={{ required: '请选择所在城市/区县' }}
                 render={({ field }) => (
-                  <Input placeholder="请输入您所在的城市/区县" {...field} className="w-full" />
+                  <RegionCascader
+                    {...field}
+                    value={field.value as string[] | undefined}
+                    onChange={(val) => field.onChange(val)}
+                    className="w-full"
+                  />
                 )}
               />
             </Form.Item>
@@ -218,10 +244,14 @@ export const LeadForm: React.FC<LeadFormProps> = ({
               label="感兴趣品类"
               validateStatus={errors.interestedCategories ? 'error' : ''}
               help={errors.interestedCategories?.message}
+              required
             >
               <Controller
                 name="interestedCategories"
                 control={control}
+                rules={{
+                  validate: (value) => (value && value.length > 0 ? true : '请选择至少一个品类'),
+                }}
                 render={({ field }) => (
                   <Checkbox.Group options={categoryInterestOptions} {...field} className="w-full" />
                 )}
@@ -229,10 +259,16 @@ export const LeadForm: React.FC<LeadFormProps> = ({
             </Form.Item>
 
             {/* 预计每月采购量 */}
-            <Form.Item label="预计每月采购量">
+            <Form.Item
+              label="预计每月采购量"
+              validateStatus={errors.monthlyVolumeSegment ? 'error' : ''}
+              help={errors.monthlyVolumeSegment?.message}
+              required
+            >
               <Controller
                 name="monthlyVolumeSegment"
                 control={control}
+                rules={{ required: '预计每月采购量不能为空' }}
                 render={({ field }) => (
                   <Radio.Group options={monthlyVolumeOptions} {...field} className="w-full space-y-2 flex flex-col" />
                 )}

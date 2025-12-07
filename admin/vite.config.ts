@@ -11,6 +11,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    allowedHosts: true,
     proxy: {
       '/api': {
         // 可通过环境变量 API_PROXY_TARGET 覆盖后端地址，默认 http://localhost:3002

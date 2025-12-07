@@ -14,12 +14,19 @@ import { UserModule } from '../user/user.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default_jwt_secret',
-        signOptions: {
-          expiresIn: parseInt(configService.get<string>('JWT_EXPIRES_IN') || '86400'),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const expiresConfig = configService.get<string>('JWT_EXPIRES_IN') || '8h';
+        const expiresIn = /^\d+$/.test(expiresConfig)
+          ? parseInt(expiresConfig, 10)
+          : expiresConfig;
+
+        return {
+          secret: configService.get<string>('JWT_SECRET') || 'default_jwt_secret',
+          signOptions: {
+            expiresIn,
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

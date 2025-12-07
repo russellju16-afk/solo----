@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
 import http from '../../services/http'
 import './index.css'
-import { AUTH_TOKEN_KEY } from '../../constants/auth'
 
 const { Title } = Typography
 
@@ -43,7 +42,6 @@ const Login: React.FC = () => {
         localStorage.removeItem('admin-remembered-username')
       }
 
-      localStorage.setItem(AUTH_TOKEN_KEY, token)
       login(token, userInfo)
       // 跳转到首页
       message.success('登录成功')

@@ -13,6 +13,26 @@ export class CompanyInfo {
   company_name: string;
 
   @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  logo: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  banner_image: string;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  short_description: string;
+
+  @Column({
     type: 'text',
     nullable: true,
   })
@@ -29,6 +49,12 @@ export class CompanyInfo {
     nullable: true,
   })
   service_channels: string; // 服务渠道
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  description: string;
 
   @Column({
     type: 'varchar',
@@ -56,7 +82,54 @@ export class CompanyInfo {
     length: 255,
     nullable: true,
   })
+  website: string;
+
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  contact_person: string;
+
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
+  business_hours: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   wechat_qr_code: string; // 微信二维码链接
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  social_media: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  seo_title: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  seo_keywords: string;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  seo_description: string;
 
   @CreateDateColumn()
   created_at: Date;
