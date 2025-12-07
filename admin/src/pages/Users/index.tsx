@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Switch } from 'antd';
-import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Switch, Typography } from 'antd';
+import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { userService } from '../../services/user';
 
 const { Option } = Select;
+const { Title, Paragraph } = Typography;
 
 const Users: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -14,16 +16,18 @@ const Users: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [filterForm] = Form.useForm();
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const [keywordInput, setKeywordInput] = useState('');
   const [role, setRole] = useState<string | undefined>();
   const [status, setStatus] = useState<number | undefined>();
 
   // 角色选项
   const roleOptions = [
     { label: '管理员', value: 'admin' },
-    { label: '编辑', value: 'editor' },
-    { label: '查看者', value: 'viewer' },
+    { label: '运营', value: 'editor' },
+    { label: '访客', value: 'viewer' },
   ];
 
   // 获取用户列表
@@ -33,58 +37,62 @@ const Users: React.FC = () => {
       const params = {
         page: currentPage,
         pageSize,
-        keyword: searchText,
+        keyword: searchText || undefined,
         role,
         status,
       };
-      const res = await userService.getUsers(params);
-      setUsersList(res.data || []);
-      setTotal(res.data.total || 0);
-    } catch (error) {
-      message.error('获取用户列表失败');
+      const res: any = await userService.getUsers(params);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setUsersList(list);
+      setTotal(res?.total || list.length || 0);
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || '获取用户列表失败';
+      message.error(msg);
     } finally {
       setLoading(false);
     }
   }, [currentPage, pageSize, role, searchText, status]);
 
-  // 初始加载
+  // 初始加载 & 依赖变化时加载
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   // 搜索
-  const handleSearch = () => {
+  const handleSearch = (value?: string) => {
+    setSearchText((value || keywordInput).trim());
     setCurrentPage(1);
-    fetchUsers();
   };
 
   // 重置搜索
   const handleReset = () => {
     setSearchText('');
+    setKeywordInput('');
     setRole(undefined);
     setStatus(undefined);
     setCurrentPage(1);
-    fetchUsers();
+    filterForm.resetFields();
   };
 
   // 打开新增用户模态框
   const handleAdd = () => {
     setCurrentUser(null);
     form.resetFields();
+    form.setFieldsValue({ status: true });
     setIsModalVisible(true);
   };
 
   // 打开编辑用户模态框
   const handleEdit = (record: any) => {
     setCurrentUser(record);
-    form.setFieldsValue(record);
-    setIsModalVisible(true);
-  };
-
-  // 打开查看用户模态框
-  const handleView = (record: any) => {
-    setCurrentUser(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({
+      username: record.username,
+      name: record.name,
+      email: record.email,
+      role: record?.role?.name || record.role,
+      status: record.status === 1,
+      password: '',
+    });
     setIsModalVisible(true);
   };
 
@@ -94,8 +102,9 @@ const Users: React.FC = () => {
       await userService.deleteUser(id);
       message.success('删除成功');
       fetchUsers();
-    } catch (error) {
-      message.error('删除失败');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || '删除失败';
+      message.error(msg);
     }
   };
 
@@ -105,8 +114,9 @@ const Users: React.FC = () => {
       await userService.updateUserStatus(id, enabled);
       message.success('状态更新成功');
       fetchUsers();
-    } catch (error) {
-      message.error('状态更新失败');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || '状态更新失败';
+      message.error(msg);
     }
   };
 
@@ -114,31 +124,49 @@ const Users: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      const payload: any = {
+        ...values,
+        status: values.status ? 1 : 0,
+      };
+
+      if (!payload.password) {
+        delete payload.password;
+      }
+
       if (currentUser) {
-        // 更新用户
-        await userService.updateUser(currentUser.id, values);
+        await userService.updateUser(currentUser.id, payload);
         message.success('更新成功');
       } else {
-        // 创建用户
-        await userService.createUser(values);
+        await userService.createUser(payload);
         message.success('创建成功');
       }
+
       setIsModalVisible(false);
+      form.resetFields();
       fetchUsers();
-    } catch (error) {
-      message.error('操作失败');
+    } catch (error: any) {
+      const msg = typeof error?.response?.data === 'string'
+        ? error.response.data
+        : error?.response?.data?.message || '操作失败，请稍后重试';
+      message.error(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const roleTag = (value: string) => {
+    const option = roleOptions.find(opt => opt.value === value);
+    const color = value === 'admin' ? 'geekblue' : value === 'editor' ? 'green' : undefined;
+    return <Tag color={color}>{option?.label || value || '--'}</Tag>;
   };
 
   // 表格列配置
   const columns = [
     {
       title: '序号',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'index',
       width: 80,
+      render: (_: any, __: any, index: number) => (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: '用户名',
@@ -146,61 +174,63 @@ const Users: React.FC = () => {
       key: 'username',
     },
     {
-      title: '姓名',
+      title: '姓名/昵称',
       dataIndex: 'name',
       key: 'name',
-    },
-    {
-      title: '邮箱',
-      dataIndex: 'email',
-      key: 'email',
     },
     {
       title: '角色',
       dataIndex: 'role',
       key: 'role',
-      render: (role: string) => {
-        const option = roleOptions.find(opt => opt.value === role);
-        return <Tag color={role === 'admin' ? 'red' : role === 'editor' ? 'blue' : 'green'}>{option?.label || role}</Tag>;
+      render: (role: any) => {
+        const roleValue = role?.name || role;
+        return roleValue ? roleTag(roleValue) : <Tag>--</Tag>;
       },
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      key: 'email',
+      render: (value: string) => value || '--',
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       render: (status: number, record: any) => (
-        <Switch
-          checked={status === 1}
-          onChange={(checked) => handleStatusChange(record.id, checked ? 1 : 0)}
-        />
+        <Space size="small">
+          <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '停用'}</Tag>
+          <Switch
+            size="small"
+            checked={status === 1}
+            onChange={(checked) => handleStatusChange(record.id, checked ? 1 : 0)}
+          />
+        </Space>
       ),
+    },
+    {
+      title: '最后登录时间',
+      dataIndex: 'last_login_at',
+      key: 'last_login_at',
+      render: (time: string) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '--'),
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (time: string) => new Date(time).toLocaleString(),
-    },
-    {
-      title: '最后登录',
-      dataIndex: 'last_login_at',
-      key: 'last_login_at',
-      render: (time: string) => time ? new Date(time).toLocaleString() : '-',
+      render: (time: string) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '--'),
     },
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 170,
       render: (record: any) => (
         <Space size="middle">
-          <Button type="link" icon={<EyeOutlined />} onClick={() => handleView(record)}>
-            查看
-          </Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
           </Button>
           <Popconfirm
-            title="确定要删除这个用户吗？"
+            title="确认删除该用户？该用户将无法再登录后台。"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
@@ -217,69 +247,78 @@ const Users: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space>
-          <h2>用户管理</h2>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新增用户
-          </Button>
-        </Space>
+        <div>
+          <Title level={3} style={{ marginBottom: 4 }}>用户管理</Title>
+          <Paragraph type="secondary" style={{ marginBottom: 0 }}>用于维护后台登录账号，可为不同角色分配权限并控制启用状态。</Paragraph>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          新增用户
+        </Button>
       </div>
 
       {/* 筛选表单 */}
       <Form
-        form={form}
+        form={filterForm}
         layout="inline"
         style={{ marginBottom: 16 }}
       >
-        <Form.Item label="搜索">
-          <Input.Search
-            placeholder="搜索用户名、姓名或邮箱"
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="middle"
-            style={{ width: 300 }}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onSearch={handleSearch}
-          />
-        </Form.Item>
+        <Space size="middle" wrap>
+          <Form.Item>
+            <Input.Search
+              placeholder="搜索用户名、姓名或邮箱"
+              allowClear
+              enterButton={<SearchOutlined />}
+              size="middle"
+              style={{ width: 320 }}
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              onSearch={handleSearch}
+            />
+          </Form.Item>
 
-        <Form.Item label="角色">
-          <Select
-            placeholder="选择角色"
-            allowClear
-            size="middle"
-            style={{ width: 120 }}
-            value={role}
-            onChange={(value) => setRole(value)}
-          >
-            {roleOptions.map(option => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
+          <Form.Item>
+            <Select
+              placeholder="按角色筛选"
+              allowClear
+              size="middle"
+              style={{ width: 160 }}
+              value={role}
+              onChange={(value) => {
+                setRole(value);
+                setCurrentPage(1);
+              }}
+            >
+              {roleOptions.map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-        <Form.Item label="状态">
-          <Select
-            placeholder="选择状态"
-            allowClear
-            size="middle"
-            style={{ width: 120 }}
-            value={status}
-            onChange={(value) => setStatus(value)}
-          >
-            <Option value={1}>启用</Option>
-            <Option value={0}>禁用</Option>
-          </Select>
-        </Form.Item>
+          <Form.Item>
+            <Select
+              placeholder="按状态筛选"
+              allowClear
+              size="middle"
+              style={{ width: 140 }}
+              value={status}
+              onChange={(value) => {
+                setStatus(value);
+                setCurrentPage(1);
+              }}
+            >
+              <Option value={1}>启用</Option>
+              <Option value={0}>停用</Option>
+            </Select>
+          </Form.Item>
 
-        <Form.Item>
-          <Button onClick={handleReset}>
-            重置
-          </Button>
-        </Form.Item>
+          <Form.Item>
+            <Button onClick={handleReset}>
+              重置
+            </Button>
+          </Form.Item>
+        </Space>
       </Form>
 
       <Table
@@ -291,9 +330,9 @@ const Users: React.FC = () => {
           current: currentPage,
           pageSize: pageSize,
           total: total,
-          onChange: (page, pageSize) => {
+          onChange: (page, size) => {
             setCurrentPage(page);
-            setPageSize(pageSize);
+            setPageSize(size || pageSize);
           },
         }}
       />
@@ -302,7 +341,11 @@ const Users: React.FC = () => {
       <Modal
         title={currentUser ? '编辑用户' : '新增用户'}
         open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+          setCurrentUser(null);
+        }}
         footer={null}
         width={600}
       >
@@ -314,7 +357,11 @@ const Users: React.FC = () => {
           <Form.Item
             name="username"
             label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            rules={[
+              { required: true, message: '请输入用户名' },
+              { min: 3, max: 20, message: '用户名长度需在3-20个字符' },
+              { pattern: /^[a-zA-Z0-9_]+$/, message: '仅支持字母、数字或下划线' },
+            ]}
           >
             <Input placeholder="请输入用户名" />
           </Form.Item>
@@ -358,22 +405,37 @@ const Users: React.FC = () => {
             <Switch />
           </Form.Item>
 
-          {!currentUser && (
-            <Form.Item
-              name="password"
-              label="密码"
-              rules={[{ required: true, message: '请输入密码', min: 6 }]}
-            >
-              <Input.Password placeholder="请输入密码" />
-            </Form.Item>
-          )}
+          <Form.Item
+            name="password"
+            label="密码"
+            rules={[
+              {
+                required: !currentUser,
+                message: '请输入密码',
+              },
+              { min: 6, message: '密码长度不少于6位' },
+            ]}
+          >
+            <Input.Password placeholder={currentUser ? '不修改请留空' : '请输入密码'} />
+          </Form.Item>
 
           <Form.Item style={{ marginTop: 24 }}>
             <Space>
               <Button type="primary" htmlType="submit" loading={loading}>
                 提交
               </Button>
-              <Button htmlType="reset">重置</Button>
+              <Button
+                onClick={() => {
+                  if (currentUser) {
+                    handleEdit(currentUser);
+                  } else {
+                    form.resetFields();
+                    form.setFieldsValue({ status: true });
+                  }
+                }}
+              >
+                重置
+              </Button>
             </Space>
           </Form.Item>
         </Form>
