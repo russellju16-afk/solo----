@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Drawer, 
   Descriptions, 
@@ -52,27 +52,27 @@ const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
   const [followupForm] = Form.useForm();
   
   // 获取线索详情
-  const fetchLeadDetail = async () => {
+  const fetchLeadDetail = useCallback(async () => {
     if (!leadId) return;
     
     setLoading(true);
     try {
       const res = await leadService.getLeadById(leadId);
-      setLead(res.data);
-      setCurrentStatus(res.data?.status || 'new');
+      setLead(res);
+      setCurrentStatus(res?.status || 'new');
     } catch (error) {
       message.error('获取线索详情失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [leadId]);
   
   // 当 leadId 或 visible 变化时重新获取数据
   useEffect(() => {
     if (visible && leadId) {
       fetchLeadDetail();
     }
-  }, [leadId, visible]);
+  }, [fetchLeadDetail, leadId, visible]);
   
   // 关闭抽屉
   const handleClose = () => {

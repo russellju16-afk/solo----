@@ -106,7 +106,7 @@ const Solutions: React.FC = () => {
                           </li>
                         ))}
                       </ul>
-                      <Link to={`/solutions/${solution.id}`}>
+                      <Link to="/contact">
                         <Button
                           type="link"
                           icon={<ArrowRightOutlined />}

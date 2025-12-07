@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT || 3002;
   
   // 全局管道，用于验证请求体
   app.useGlobalPipes(new ValidationPipe({
@@ -18,7 +19,7 @@ async function bootstrap() {
     credentials: true,
   });
   
-  await app.listen(3001);
-  console.log('Application is running on: http://localhost:3001');
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();

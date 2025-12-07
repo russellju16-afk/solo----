@@ -148,7 +148,7 @@ const ProductsList: React.FC = () => {
                 cover={<img alt={product.name} src={product.image} className="h-[200px] object-cover" />}
                 actions={[
                   <ShoppingCartOutlined key="add" />,
-                  <Link to={`/products/detail/${product.id}`}>
+                  <Link to={`/products/${product.id}`}>
                   <Button 
                     key="detail" 
                     type="link"

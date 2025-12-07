@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
@@ -17,7 +18,7 @@ const Login: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true)
     try {
-      const response = await http.post('/api/auth/login', values)
+      const response = await http.post('/auth/login', values)
       // 响应拦截器已经返回了response.data，所以直接从response中解构
       const { token, userInfo } = response
       

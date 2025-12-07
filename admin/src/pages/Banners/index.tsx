@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber, Upload, Image } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { bannerService } from '../../services/content';
 
 const { Option } = Select;
 
+interface BannerItem {
+  id?: number;
+  title?: string;
+  sub_title?: string;
+  image_url?: string;
+  position?: string;
+  enabled?: number;
+  [key: string]: unknown;
+}
+
 const Banners: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [banners, setBanners] = useState<any[]>([]);
+  const [banners, setBanners] = useState<BannerItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentBanner, setCurrentBanner] = useState<any>(null);
+  const [currentBanner, setCurrentBanner] = useState<BannerItem | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [position, setPosition] = useState<string | undefined>();
@@ -24,7 +35,7 @@ const Banners: React.FC = () => {
   ];
 
   // 获取Banner列表
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -32,18 +43,18 @@ const Banners: React.FC = () => {
         enabled,
       };
       const res = await bannerService.getBanners(params);
-      setBanners(res.data || []);
+      setBanners((res.data as BannerItem[]) || []);
     } catch (error) {
       message.error('获取Banner列表失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [position, enabled]);
 
   // 初始加载
   useEffect(() => {
     fetchBanners();
-  }, [position, enabled]);
+  }, [fetchBanners]);
 
   // 搜索
   const handleSearch = () => {
@@ -70,7 +81,7 @@ const Banners: React.FC = () => {
   };
 
   // 打开编辑Banner模态框
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: BannerItem) => {
     setCurrentBanner(record);
     form.setFieldsValue({
       ...record,
@@ -80,7 +91,7 @@ const Banners: React.FC = () => {
   };
 
   // 打开查看Banner模态框
-  const handleView = (record: any) => {
+  const handleView = (record: BannerItem) => {
     setCurrentBanner(record);
     form.setFieldsValue({
       ...record,

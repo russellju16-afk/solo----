@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Button, Space } from 'antd';
 import { leadService } from '../services/lead';

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Upload, Image, DatePicker } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { caseService } from '../../services/content';
@@ -34,7 +35,7 @@ const Cases: React.FC = () => {
   ];
 
   // 获取案例列表
-  const fetchCases = async () => {
+  const fetchCases = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -52,12 +53,12 @@ const Cases: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, currentPage, pageSize, searchText, status]);
 
   // 初始加载
   useEffect(() => {
     fetchCases();
-  }, [currentPage, pageSize, searchText, category, status]);
+  }, [fetchCases]);
 
   // 搜索
   const handleSearch = () => {

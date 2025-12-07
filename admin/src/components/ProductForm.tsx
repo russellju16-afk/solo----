@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Upload, Button, Space, Tabs, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';

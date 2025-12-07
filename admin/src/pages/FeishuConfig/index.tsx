@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Button, message, Switch, Space } from 'antd';
 import { feishuService } from '../../services/company';
 
@@ -7,7 +8,7 @@ const FeishuConfig: React.FC = () => {
   const [form] = Form.useForm();
 
   // 获取飞书配置
-  const fetchFeishuConfig = async () => {
+  const fetchFeishuConfig = useCallback(async () => {
     setLoading(true);
     try {
       const res = await feishuService.getFeishuConfig();
@@ -17,12 +18,12 @@ const FeishuConfig: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form]);
 
   // 初始加载
   useEffect(() => {
     fetchFeishuConfig();
-  }, []);
+  }, [fetchFeishuConfig]);
 
   // 表单提交
   const onFinish = async (values: any) => {

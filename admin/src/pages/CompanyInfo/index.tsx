@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Button, message, Upload, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/company';
@@ -20,7 +21,7 @@ const CompanyInfo: React.FC = () => {
   };
 
   // 获取公司信息
-  const fetchCompanyInfo = async () => {
+  const fetchCompanyInfo = useCallback(async () => {
     setLoading(true);
     try {
       const res = await companyService.getCompanyInfo();
@@ -34,12 +35,12 @@ const CompanyInfo: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [form]);
 
   // 初始加载
   useEffect(() => {
     fetchCompanyInfo();
-  }, []);
+  }, [fetchCompanyInfo]);
 
   // 表单提交
   const onFinish = async (values: any) => {

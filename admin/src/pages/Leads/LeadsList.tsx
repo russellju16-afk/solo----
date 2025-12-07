@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, DatePicker, Form, Tag, message } from 'antd';
 import { SearchOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -57,7 +58,7 @@ const LeadsList: React.FC = () => {
   }, [id]);
   
   // 获取线索列表
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -72,19 +73,19 @@ const LeadsList: React.FC = () => {
       };
       
       const res = await leadService.getLeads(params);
-      setLeads(res.data?.items || []);
-      setTotal(res.data?.total || 0);
+      setLeads(res?.items || []);
+      setTotal(res?.total || 0);
     } catch (error) {
       message.error('获取线索列表失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [channelType, currentPage, dateRange, keyword, ownerId, pageSize, status]);
   
   // 初始加载和筛选条件变化时重新获取线索列表
   useEffect(() => {
     fetchLeads();
-  }, [currentPage, pageSize, status, channelType, ownerId, keyword, dateRange]);
+  }, [fetchLeads]);
   
   // 搜索
   const handleSearch = () => {
@@ -120,7 +121,7 @@ const LeadsList: React.FC = () => {
       const res = await leadService.exportLeads(params);
       
       // 创建下载链接
-      const url = window.URL.createObjectURL(res.data);
+      const url = window.URL.createObjectURL(res);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute(

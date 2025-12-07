@@ -1,18 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import http from './http';
 
 // 公司信息相关API
 export const companyService = {
   // 获取公司信息
   getCompanyInfo: () => {
-    return http.get('/api/admin/company-info');
+    return http.get('/admin/company-info');
   },
   // 更新公司信息
   updateCompanyInfo: (data: any) => {
-    return http.put('/api/admin/company-info', data);
+    return http.put('/admin/company-info', data);
   },
   // 前台获取公司信息（无需认证）
   getFrontCompanyInfo: () => {
-    return http.get('/api/company-info');
+    return http.get('/company-info');
   },
 };
 
@@ -20,14 +21,14 @@ export const companyService = {
 export const feishuService = {
   // 获取飞书配置
   getFeishuConfig: () => {
-    return http.get('/api/admin/feishu/config');
+    return http.get('/admin/feishu/config');
   },
   // 更新飞书配置
   updateFeishuConfig: (data: any) => {
-    return http.put('/api/admin/feishu/config', data);
+    return http.put('/admin/feishu/config', data);
   },
   // 测试飞书连接
   testFeishuConnection: () => {
-    return http.post('/api/admin/feishu/test');
+    return http.post('/admin/feishu/test');
   },
 };

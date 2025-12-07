@@ -84,3 +84,4 @@ export class AuthService {
       message: '密码重置成功',
     };
   }
+}

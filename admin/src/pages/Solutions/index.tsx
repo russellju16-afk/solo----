@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Upload, Image, DatePicker } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { solutionService } from '../../services/content';
@@ -35,7 +36,7 @@ const Solutions: React.FC = () => {
   ];
 
   // 获取解决方案列表
-  const fetchSolutions = async () => {
+  const fetchSolutions = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -53,12 +54,12 @@ const Solutions: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, currentPage, pageSize, searchText, status]);
 
   // 初始加载
   useEffect(() => {
     fetchSolutions();
-  }, [currentPage, pageSize, searchText, category, status]);
+  }, [fetchSolutions]);
 
   // 搜索
   const handleSearch = () => {

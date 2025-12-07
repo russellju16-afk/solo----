@@ -153,7 +153,7 @@ const Home: React.FC = () => {
                 hoverable 
                 className="h-full"
                 cover={<img alt={`产品 ${item}`} src={`https://via.placeholder.com/300x200/FFFFFF/333333?text=产品${item}`} />}
-                onClick={() => window.location.href = `/products/detail/${item}`}
+                onClick={() => window.location.href = `/products/${item}`}
               >
                 <Meta title={`产品 ${item}`} description="优质粮油产品" />
               </Card>

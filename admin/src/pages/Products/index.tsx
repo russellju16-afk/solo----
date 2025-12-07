@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 
@@ -51,7 +52,7 @@ const Products: React.FC = () => {
   }, []);
 
   // 获取产品列表
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -70,12 +71,12 @@ const Products: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [brandId, categoryId, currentPage, pageSize, searchText, status]);
 
   // 初始加载和筛选条件变化时重新获取产品列表
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, pageSize, searchText, categoryId, brandId, status]);
+  }, [fetchProducts]);
 
   // 搜索
   const handleSearch = () => {

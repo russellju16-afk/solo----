@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Popconfirm, Tag, DatePicker, message } from 'antd';
 import { SearchOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { logService } from '../../services/user';
@@ -30,7 +31,7 @@ const OperationLogs: React.FC = () => {
   ];
 
   // 获取操作日志列表
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -50,12 +51,12 @@ const OperationLogs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [action, currentPage, dateRange, pageSize, searchText, username]);
 
   // 初始加载
   useEffect(() => {
     fetchLogs();
-  }, [currentPage, pageSize, searchText, username, action, dateRange]);
+  }, [fetchLogs]);
 
   // 搜索
   const handleSearch = () => {

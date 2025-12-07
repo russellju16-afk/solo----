@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Switch } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { userService } from '../../services/user';
@@ -26,7 +27,7 @@ const Users: React.FC = () => {
   ];
 
   // 获取用户列表
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -44,12 +45,12 @@ const Users: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize, role, searchText, status]);
 
   // 初始加载
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, pageSize, searchText, role, status]);
+  }, [fetchUsers]);
 
   // 搜索
   const handleSearch = () => {

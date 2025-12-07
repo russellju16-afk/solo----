@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, DatePicker, Upload, Image } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { newsService } from '../../services/content';
@@ -35,7 +36,7 @@ const News: React.FC = () => {
   ];
 
   // 获取新闻列表
-  const fetchNews = async () => {
+  const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
@@ -55,12 +56,12 @@ const News: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, currentPage, dateRange, pageSize, searchText, status]);
 
   // 初始加载
   useEffect(() => {
     fetchNews();
-  }, [currentPage, pageSize, searchText, category, status, dateRange]);
+  }, [fetchNews]);
 
   // 搜索
   const handleSearch = () => {

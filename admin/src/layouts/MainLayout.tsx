@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
 import { Layout as AntLayout, Menu, Avatar, Dropdown, Button } from 'antd'
 import { UserOutlined, LogoutOutlined, DashboardOutlined, TeamOutlined } from '@ant-design/icons'
