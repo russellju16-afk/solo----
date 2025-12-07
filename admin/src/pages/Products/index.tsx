@@ -65,7 +65,7 @@ const Products: React.FC = () => {
       };
       const res = await productService.getProducts(params);
       setProducts(res.data || []);
-      setTotal(res.data.total || 0);
+      setTotal(res.total || 0);
     } catch (error) {
       message.error('获取产品列表失败');
     } finally {

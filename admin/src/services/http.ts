@@ -14,8 +14,8 @@ const http: AxiosInstance = axios.create({
 // 请求拦截器
 http.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('token')
+    const { token: storeToken } = useAuthStore.getState()
+    const token = storeToken || localStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -38,11 +38,17 @@ http.interceptors.response.use(
       // 服务器返回错误状态码
       const { status, data } = error.response
       
-      // 401未授权，跳转到登录页
       if (status === 401) {
-        message.error('登录已过期，请重新登录')
-        useAuthStore.getState().logout()
-        window.location.href = '/login'
+        const { token, logout } = useAuthStore.getState()
+        const requestUrl = error.config?.url || ''
+        const isLoginApi = requestUrl.includes('/auth/login')
+        const isOnLoginPage = window.location.pathname === '/login'
+
+        if (!isLoginApi && token && !isOnLoginPage) {
+          message.error('登录已过期，请重新登录')
+          logout()
+          window.location.href = '/login'
+        }
       } else {
         // 其他错误，显示错误信息
         message.error(data.message || '请求失败，请稍后重试')

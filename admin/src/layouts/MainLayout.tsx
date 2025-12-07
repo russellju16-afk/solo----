@@ -28,15 +28,15 @@ const { Header, Sider, Content } = AntLayout
 const MainLayout: React.FC = () => {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout, token } = useAuthStore()
 
   // 检查用户是否登录
   React.useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
+    const savedToken = localStorage.getItem('token')
+    if (!token && !savedToken) {
       navigate('/login')
     }
-  }, [navigate])
+  }, [token, navigate])
 
   // 退出登录
   const handleLogout = () => {

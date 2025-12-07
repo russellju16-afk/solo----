@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
-import { Form, Input, Button, Card, Typography, message } from 'antd'
+import { Form, Input, Button, Card, Typography, message, Checkbox } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
@@ -10,21 +10,48 @@ import './index.css'
 const { Title } = Typography
 
 const Login: React.FC = () => {
+  const [form] = Form.useForm()
   const navigate = useNavigate()
   const { login } = useAuthStore()
   const [loading, setLoading] = React.useState(false)
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('admin-remembered-credentials')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        form.setFieldsValue({
+          username: parsed.username,
+          password: parsed.password,
+          remember: true,
+        })
+      } catch (e) {
+        // ignore malformed cache
+      }
+    }
+  }, [form])
 
   // 登录表单提交
   const onFinish = async (values: any) => {
     setLoading(true)
     try {
-      const response = await http.post('/auth/login', values)
+      const { remember, ...loginValues } = values
+      const response = await http.post('/auth/login', loginValues)
       // 响应拦截器已经返回了response.data，所以直接从response中解构
       const { token, userInfo } = response
-      
-      // 保存token到localStorage
-      localStorage.setItem('token', token)
-      // 更新状态管理
+
+      if (remember) {
+        localStorage.setItem(
+          'admin-remembered-credentials',
+          JSON.stringify({
+            username: loginValues.username,
+            password: loginValues.password,
+          }),
+        )
+      } else {
+        localStorage.removeItem('admin-remembered-credentials')
+      }
+
       login(token, userInfo)
       // 跳转到首页
       message.success('登录成功')
@@ -51,6 +78,7 @@ const Login: React.FC = () => {
         <Form
           name="login"
           layout="vertical"
+          form={form}
           onFinish={onFinish}
         >
           <Form.Item
@@ -78,6 +106,9 @@ const Login: React.FC = () => {
               placeholder="密码"
               size="large"
             />
+          </Form.Item>
+          <Form.Item name="remember" valuePropName="checked" initialValue={false}>
+            <Checkbox>记住密码（仅在可信设备使用）</Checkbox>
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} size="large" block>
