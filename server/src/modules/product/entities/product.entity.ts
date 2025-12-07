@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { ProductCategory } from './product-category.entity';
 import { ProductBrand } from './product-brand.entity';
 import { ProductImage } from './product-image.entity';
@@ -8,15 +8,18 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @Column({
     type: 'varchar',
     length: 100,
   })
   name: string;
 
+  @Index()
   @ManyToOne(() => ProductCategory, (category) => category.products)
   category: ProductCategory;
 
+  @Index()
   @ManyToOne(() => ProductBrand, (brand) => brand.products)
   brand: ProductBrand;
 
@@ -62,6 +65,7 @@ export class Product {
     type: 'tinyint',
     default: 1,
   })
+  @Index()
   status: number; // 1: 上架, 0: 下架
 
   @Column({

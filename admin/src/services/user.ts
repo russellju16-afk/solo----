@@ -25,7 +25,7 @@ export const userService = {
   },
   // 更新用户状态
   updateUserStatus: (id: number, status: number) => {
-    return http.put(`/admin/users/${id}/status`, { status });
+    return http.put(`/admin/users/${id}`, { status });
   },
   // 更新用户密码
   updatePassword: (id: number, data: any) => {

@@ -1,29 +1,33 @@
 import { Routes, Route } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import AppLayout from './components/layout/AppLayout'
-import Home from './pages/Home/index'
-import ProductsList from './pages/Products/List/index'
-import ProductDetail from './pages/Products/Detail/index'
-import Solutions from './pages/Solutions/index'
-import Service from './pages/Service/index'
-import Cases from './pages/Cases/index'
-import News from './pages/News/index'
-import About from './pages/About/index'
-import Contact from './pages/Contact/index'
+
+const Home = lazy(() => import('./pages/Home/index'))
+const ProductsList = lazy(() => import('./pages/Products/List/index'))
+const ProductDetail = lazy(() => import('./pages/Products/Detail/index'))
+const Solutions = lazy(() => import('./pages/Solutions/index'))
+const Service = lazy(() => import('./pages/Service/index'))
+const Cases = lazy(() => import('./pages/Cases/index'))
+const News = lazy(() => import('./pages/News/index'))
+const About = lazy(() => import('./pages/About/index'))
+const Contact = lazy(() => import('./pages/Contact/index'))
 
 function App() {
   return (
     <AppLayout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<ProductsList />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/solutions" element={<Solutions />} />
-        <Route path="/service" element={<Service />} />
-        <Route path="/cases" element={<Cases />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-      </Routes>
+      <Suspense fallback={<div className="p-6 text-center text-gray-500">页面加载中...</div>}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<ProductsList />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/solutions" element={<Solutions />} />
+          <Route path="/service" element={<Service />} />
+          <Route path="/cases" element={<Cases />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </Suspense>
     </AppLayout>
   )
 }

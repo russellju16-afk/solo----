@@ -12,6 +12,19 @@ export class UserService implements OnModuleInit {
     @InjectRepository(Role) private roleRepository: Repository<Role>,
   ) {}
 
+  // 解析角色（支持 roleId 或 role/roleName）
+  private async resolveRole(roleId?: number, roleName?: string): Promise<Role | null> {
+    if (roleId) {
+      const roleById = await this.roleRepository.findOne({ where: { id: roleId } });
+      if (roleById) return roleById;
+    }
+    if (roleName) {
+      const roleByName = await this.roleRepository.findOne({ where: { name: roleName } });
+      if (roleByName) return roleByName;
+    }
+    return null;
+  }
+
   // 根据用户名查找用户
   async findOneByUsername(username: string): Promise<User | undefined> {
     return this.userRepository.findOne({
@@ -28,16 +41,42 @@ export class UserService implements OnModuleInit {
     });
   }
 
-  // 获取所有用户
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      relations: ['role'],
-    });
+  // 获取所有用户（支持筛选与分页）
+  async findAll(query: any = {}): Promise<any> {
+    const page = parseInt(query.page || '1', 10);
+    const pageSize = parseInt(query.pageSize || '10', 10);
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .orderBy('user.id', 'DESC');
+
+    if (query.keyword) {
+      qb.andWhere('(user.username LIKE :keyword OR user.name LIKE :keyword OR user.email LIKE :keyword)', {
+        keyword: `%${query.keyword}%`,
+      });
+    }
+
+    if (query.role) {
+      qb.andWhere('role.name = :roleName', { roleName: query.role });
+    }
+
+    if (query.status !== undefined && query.status !== null && query.status !== '') {
+      qb.andWhere('user.status = :status', { status: Number(query.status) });
+    }
+
+    const [data, total] = await qb.skip((page - 1) * pageSize).take(pageSize).getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
   }
 
   // 创建用户
   async create(createUserDto: any): Promise<User> {
-    const { username, password, name, phone, roleId } = createUserDto;
+    const { username, password, name, phone, email, roleId, role, roleName } = createUserDto;
 
     // 检查用户名是否已存在
     const existingUser = await this.findOneByUsername(username);
@@ -45,9 +84,16 @@ export class UserService implements OnModuleInit {
       throw new Error('用户名已存在');
     }
 
+    if (email) {
+      const existingEmail = await this.userRepository.findOne({ where: { email } });
+      if (existingEmail) {
+        throw new Error('邮箱已被使用');
+      }
+    }
+
     // 查找角色
-    const role = await this.roleRepository.findOne({ where: { id: roleId } });
-    if (!role) {
+    const roleEntity = await this.resolveRole(roleId, role || roleName);
+    if (!roleEntity) {
       throw new NotFoundException('角色不存在');
     }
 
@@ -60,7 +106,8 @@ export class UserService implements OnModuleInit {
       password_hash: hashedPassword,
       name,
       phone,
-      role,
+      email,
+      role: roleEntity,
       status: 1,
     });
 
@@ -81,13 +128,22 @@ export class UserService implements OnModuleInit {
     }
 
     // 如果更新角色，需要查找角色
-    if (updateUserDto.roleId) {
-      const role = await this.roleRepository.findOne({ where: { id: updateUserDto.roleId } });
+    if (updateUserDto.roleId || updateUserDto.role || updateUserDto.roleName) {
+      const role = await this.resolveRole(updateUserDto.roleId, updateUserDto.role || updateUserDto.roleName);
       if (!role) {
         throw new NotFoundException('角色不存在');
       }
       user.role = role;
       delete updateUserDto.roleId;
+      delete updateUserDto.role;
+      delete updateUserDto.roleName;
+    }
+
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingEmail = await this.userRepository.findOne({ where: { email: updateUserDto.email } });
+      if (existingEmail && existingEmail.id !== user.id) {
+        throw new Error('邮箱已被使用');
+      }
     }
 
     // 更新用户信息

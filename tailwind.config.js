@@ -3,7 +3,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./admin/**/*.{js,ts,jsx,tsx,html}",
+    "./admin/src/**/*.{js,ts,jsx,tsx,html}",
+    "./admin/index.html",
   ],
   theme: {
     extend: {
