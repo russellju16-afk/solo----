@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Upload, Image, DatePicker } from 'antd';
-import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber } from 'antd';
+import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { solutionService } from '../../services/content';
 import dayjs from 'dayjs';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { Option } = Select;
 
@@ -17,11 +18,11 @@ const Solutions: React.FC = () => {
   const [currentSolution, setCurrentSolution] = useState<any>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const [category, setCategory] = useState<string | undefined>();
-  const [status, setStatus] = useState<string | undefined>();
+  const [channelType, setChannelType] = useState<string | undefined>();
+  const [enabled, setEnabled] = useState<number | undefined>();
 
   // 分类选项
-  const categoryOptions = [
+  const channelOptions = [
     { label: '粮油贸易解决方案', value: 'grain_trade' },
     { label: '物流配送解决方案', value: 'logistics' },
     { label: '仓储管理解决方案', value: 'warehousing' },
@@ -30,9 +31,9 @@ const Solutions: React.FC = () => {
   ];
 
   // 状态选项
-  const statusOptions = [
-    { label: '草稿', value: 'draft' },
-    { label: '已发布', value: 'published' },
+  const enabledOptions = [
+    { label: '启用', value: 1 },
+    { label: '禁用', value: 0 },
   ];
 
   // 获取解决方案列表
@@ -43,18 +44,18 @@ const Solutions: React.FC = () => {
         page: currentPage,
         pageSize,
         keyword: searchText,
-        category,
-        status,
+        channel_type: channelType,
+        enabled,
       };
       const res = await solutionService.getSolutions(params);
       setSolutionsList(res.data || []);
-      setTotal(res.data.total || 0);
+      setTotal(res.total || 0);
     } catch (error) {
       message.error('获取解决方案列表失败');
     } finally {
       setLoading(false);
     }
-  }, [category, currentPage, pageSize, searchText, status]);
+  }, [channelType, currentPage, pageSize, searchText, enabled]);
 
   // 初始加载
   useEffect(() => {
@@ -70,8 +71,8 @@ const Solutions: React.FC = () => {
   // 重置搜索
   const handleReset = () => {
     setSearchText('');
-    setCategory(undefined);
-    setStatus(undefined);
+    setChannelType(undefined);
+    setEnabled(undefined);
     setCurrentPage(1);
     fetchSolutions();
   };
@@ -88,8 +89,9 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
-      published_at: record.published_at ? dayjs(record.published_at) : null,
-      cover_image: record.cover_image ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }] : [],
+      pain_points: record.pain_points?.join('\n'),
+      solutions: record.solutions?.join('\n'),
+      product_ids: record.product_ids?.join(','),
     });
     setIsModalVisible(true);
   };
@@ -99,8 +101,9 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
-      published_at: record.published_at ? dayjs(record.published_at) : null,
-      cover_image: record.cover_image ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }] : [],
+      pain_points: record.pain_points?.join('\n'),
+      solutions: record.solutions?.join('\n'),
+      product_ids: record.product_ids?.join(','),
     });
     setIsModalVisible(true);
   };
@@ -152,8 +155,8 @@ const Solutions: React.FC = () => {
     listType: 'picture-card' as const,
     className: 'avatar-uploader',
     showUploadList: true,
-    action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
-    beforeUpload: () => false, // 手动上传
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
   };
 
   // 表格列配置

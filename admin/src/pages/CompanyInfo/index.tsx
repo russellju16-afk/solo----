@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Form, Input, Button, message, Upload, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/company';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { TextArea } = Input;
 
@@ -10,14 +11,20 @@ const CompanyInfo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
-  // 图片上传配置
-  const uploadProps = {
+  // 图片上传配置（Logo 控制在 2MB 内）
+  const logoUploadProps = {
     name: 'file',
     listType: 'picture-card' as const,
     className: 'avatar-uploader',
     showUploadList: true,
-    action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
-    beforeUpload: () => false, // 手动上传
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 2),
+  };
+
+  // Banner 图片可稍大，限制 5MB
+  const bannerUploadProps = {
+    ...logoUploadProps,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
   };
 
   // 获取公司信息
@@ -25,10 +32,11 @@ const CompanyInfo: React.FC = () => {
     setLoading(true);
     try {
       const res = await companyService.getCompanyInfo();
+      const data = (res as any)?.data || res || {};
       form.setFieldsValue({
-        ...res.data,
-        logo: res.data.logo ? [{ uid: '1', name: res.data.logo.split('/').pop(), status: 'done', url: res.data.logo }] : [],
-        banner_image: res.data.banner_image ? [{ uid: '1', name: res.data.banner_image.split('/').pop(), status: 'done', url: res.data.banner_image }] : [],
+        ...data,
+        logo: data.logo ? [{ uid: '1', name: data.logo.split('/').pop(), status: 'done', url: data.logo }] : [],
+        banner_image: data.banner_image ? [{ uid: '1', name: data.banner_image.split('/').pop(), status: 'done', url: data.banner_image }] : [],
       });
     } catch (error) {
       message.error('获取公司信息失败');
@@ -58,7 +66,8 @@ const CompanyInfo: React.FC = () => {
       await companyService.updateCompanyInfo(companyData);
       message.success('更新成功');
     } catch (error) {
-      message.error('更新失败');
+      console.error('[CompanyInfo] update error', (error as any)?.response?.data || error);
+      message.error((error as any)?.response?.data?.message || '更新失败');
     } finally {
       setLoading(false);
     }
@@ -85,7 +94,7 @@ const CompanyInfo: React.FC = () => {
           name="logo"
           label="公司Logo"
         >
-          <Upload {...uploadProps}>
+          <Upload {...logoUploadProps}>
             <div>
               <UploadOutlined />
               <div style={{ marginTop: 8 }}>上传Logo</div>
@@ -97,7 +106,7 @@ const CompanyInfo: React.FC = () => {
           name="banner_image"
           label="首页Banner图片"
         >
-          <Upload {...uploadProps}>
+          <Upload {...bannerUploadProps}>
             <div>
               <UploadOutlined />
               <div style={{ marginTop: 8 }}>上传Banner图片</div>

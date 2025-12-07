@@ -11,22 +11,22 @@ export class CaseService {
 
   // 构建查询条件
   private buildQueryBuilder(query: any) {
-    const qb = this.caseRepository.createQueryBuilder('case')
-      .orderBy('case.published_at', 'DESC');
+    const qb = this.caseRepository.createQueryBuilder('c')
+      .orderBy('c.published_at', 'DESC');
 
     // 按客户名称搜索
     if (query.keyword) {
-      qb.where('case.customer_name LIKE :keyword', { keyword: `%${query.keyword}%` });
+      qb.where('c.customer_name LIKE :keyword', { keyword: `%${query.keyword}%` });
     }
 
     // 按行业类型筛选
     if (query.industry_type) {
-      qb.andWhere('case.industry_type = :industryType', { industryType: query.industry_type });
+      qb.andWhere('c.industry_type = :industryType', { industryType: query.industry_type });
     }
 
     // 按状态筛选
     if (query.status) {
-      qb.andWhere('case.status = :status', { status: query.status });
+      qb.andWhere('c.status = :status', { status: query.status });
     }
 
     return qb;

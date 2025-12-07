@@ -3,13 +3,21 @@ import { Helmet } from 'react-helmet-async'
 import { PhoneOutlined, MailOutlined, EnvironmentOutlined, ClockCircleOutlined, WechatOutlined } from '@ant-design/icons'
 import { Button } from 'antd'
 import { LeadForm } from '@/components/forms/LeadForm'
+import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 
 const Contact: React.FC = () => {
+  const { companyInfo } = useCompanyInfo()
+  const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司'
+  const companyAddress = companyInfo?.address || '西安市未央区粮油批发市场A区12号'
+  const companyPhone = companyInfo?.phone || '029-86543210'
+  const companyEmail = companyInfo?.email || 'info@chaoqun粮油.com'
+  const businessHours = companyInfo?.business_hours || '周一至周五：8:00-18:00'
+  const wechatQr = companyInfo?.wechat_qr_code
   return (
     <div className="py-12">
       <Helmet>
-        <title>联系我们 - 西安超群粮油贸易有限公司</title>
-        <meta name="description" content="西安超群粮油贸易有限公司联系方式，地址：西安市未央区粮油批发市场A区12号，电话：029-86543210" />
+        <title>联系我们 - {companyName}</title>
+        <meta name="description" content={companyInfo?.seo_description || `${companyName}联系方式，地址：${companyAddress}，电话：${companyPhone}`} />
       </Helmet>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +38,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-1">公司地址</h3>
-                  <p className="text-gray-600">西安市未央区粮油批发市场A区12号</p>
+                  <p className="text-gray-600">{companyAddress}</p>
                 </div>
               </div>
               
@@ -40,11 +48,11 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-1">联系电话</h3>
-                  <p className="text-gray-600 mb-2">029-86543210</p>
+                  <p className="text-gray-600 mb-2">{companyPhone}</p>
                   <Button 
                     type="primary" 
                     className="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition-all duration-300"
-                    onClick={() => window.location.href = 'tel:029-86543210'}
+                    onClick={() => window.location.href = `tel:${companyPhone}`}
                   >
                     一键拨打电话
                   </Button>
@@ -57,7 +65,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-1">电子邮箱</h3>
-                  <p className="text-gray-600">info@chaoqun粮油.com</p>
+                  <p className="text-gray-600">{companyEmail}</p>
                 </div>
               </div>
               
@@ -67,7 +75,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium mb-1">工作时间</h3>
-                  <p className="text-gray-600">周一至周五：8:00-18:00</p>
+                  <p className="text-gray-600">{businessHours}</p>
                   <p className="text-gray-600">周六至周日：休息</p>
                 </div>
               </div>
@@ -75,7 +83,11 @@ const Contact: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-4">微信二维码</h3>
                 <div className="w-48 h-48 bg-light rounded-md flex items-center justify-center mx-auto mb-4">
-                  <WechatOutlined className="text-4xl text-gray-400" />
+                  {wechatQr ? (
+                    <img src={wechatQr} alt="微信二维码" className="max-h-48 object-contain" />
+                  ) : (
+                    <WechatOutlined className="text-4xl text-gray-400" />
+                  )}
                 </div>
                 <p className="text-center text-sm text-gray-600">扫码添加微信，获取更多优惠信息</p>
               </div>

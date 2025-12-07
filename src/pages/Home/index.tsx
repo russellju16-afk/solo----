@@ -5,9 +5,8 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { LeadForm } from '@/components/forms/LeadForm';
 import { fetchBanners } from '@/services/content';
-import { fetchCompanyInfo } from '@/services/company';
 import { Banner as BannerType } from '@/types/content';
-import { CompanyInfo } from '@/types/company';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
 const { Title, Paragraph } = Typography;
 const { Meta } = Card;
@@ -15,8 +14,7 @@ const { Meta } = Card;
 const Home: React.FC = () => {
   const [banners, setBanners] = useState<BannerType[]>([]);
   const [loadingBanners, setLoadingBanners] = useState(false);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [loadingCompany, setLoadingCompany] = useState(false);
+  const { companyInfo, loading: loadingCompany } = useCompanyInfo();
 
   useEffect(() => {
     const loadBanners = async () => {
@@ -31,20 +29,7 @@ const Home: React.FC = () => {
       }
     };
 
-    const loadCompanyInfo = async () => {
-      setLoadingCompany(true);
-      try {
-        const data = await fetchCompanyInfo();
-        setCompanyInfo(data || null);
-      } catch (error) {
-        setCompanyInfo(null);
-      } finally {
-        setLoadingCompany(false);
-      }
-    };
-
     loadBanners();
-    loadCompanyInfo();
   }, []);
 
   const carouselItems = useMemo(() => banners.map((banner) => ({

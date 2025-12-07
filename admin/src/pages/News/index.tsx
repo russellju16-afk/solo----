@@ -4,6 +4,7 @@ import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, F
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { newsService } from '../../services/content';
 import dayjs from 'dayjs';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -155,8 +156,8 @@ const News: React.FC = () => {
     listType: 'picture-card' as const,
     className: 'avatar-uploader',
     showUploadList: true,
-    action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
-    beforeUpload: () => false, // 手动上传
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
   };
 
   // 表格列配置

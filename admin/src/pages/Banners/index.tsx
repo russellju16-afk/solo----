@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber, Upload, Image } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { bannerService } from '../../services/content';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { Option } = Select;
 
@@ -157,8 +158,8 @@ const Banners: React.FC = () => {
     listType: 'picture-card' as const,
     className: 'avatar-uploader',
     showUploadList: true,
-    action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
-    beforeUpload: () => false, // 手动上传
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
   };
 
   // 表格列配置

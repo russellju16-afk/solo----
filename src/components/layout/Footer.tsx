@@ -1,16 +1,25 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 
 const Footer: React.FC = () => {
+  const { companyInfo } = useCompanyInfo()
+  const companyName = companyInfo?.company_name || '超群粮油'
+  const companyIntro = companyInfo?.short_description || companyInfo?.introduction || '西安本地仓储配送的粮油批发服务商，服务高校、团餐、商超、食品厂等客户。'
+  const address = companyInfo?.address || '西安市未央区粮油批发市场A区12号'
+  const phone = companyInfo?.phone || '029-86543210'
+  const email = companyInfo?.email || 'info@chaoqun粮油.com'
+  const businessHours = companyInfo?.business_hours || '周一至周五：8:00-18:00'
+
   return (
     <footer className="bg-dark text-white py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* 公司简介 */}
           <div>
-            <h3 className="text-xl font-bold mb-4">超群粮油</h3>
+            <h3 className="text-xl font-bold mb-4">{companyName}</h3>
             <p className="text-gray-400 mb-4">
-              西安本地仓储配送的粮油批发服务商，服务高校、团餐、商超、食品厂等客户。
+              {companyIntro}
             </p>
             <div className="flex space-x-4">
               {/* 可以添加社交媒体图标 */}
@@ -50,31 +59,31 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-start">
                 <svg className="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span className="text-gray-400">西安市未央区粮油批发市场A区12号</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                <span className="text-gray-400">029-86543210</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-                <span className="text-gray-400">info@chaoqun粮油.com</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span className="text-gray-400">周一至周五：8:00-18:00</span>
-              </li>
-            </ul>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span className="text-gray-400">{address}</span>
+          </li>
+          <li className="flex items-center">
+            <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span className="text-gray-400">{phone}</span>
+          </li>
+          <li className="flex items-center">
+            <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <span className="text-gray-400">{email}</span>
+          </li>
+          <li className="flex items-center">
+            <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span className="text-gray-400">{businessHours}</span>
+          </li>
+        </ul>
+      </div>
 
           {/* 服务渠道 */}
           <div>
@@ -92,7 +101,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>© 2024 西安超群粮油贸易有限公司. 保留所有权利.</p>
+          <p>© 2024 {companyName}. 保留所有权利.</p>
           <p className="mt-2 text-sm">ICP备案号：陕ICP备12345678号-1 | 营业执照号：91610112XXXXXXXXXX</p>
         </div>
       </div>

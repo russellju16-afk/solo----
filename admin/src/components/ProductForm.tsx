@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Upload, Button, Space, Tabs, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { productService } from '../services/product';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../utils/upload';
 
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -271,10 +272,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
               listType="picture-card"
               className="avatar-uploader"
               showUploadList
+              accept={IMAGE_ACCEPT}
               action="https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188"
               onChange={handleUploadChange}
               disabled={isViewMode}
-              beforeUpload={() => false} // 手动上传
+              beforeUpload={(file) => validateImageBeforeUpload(file, 5)} // 图片安全限制
             >
               {images.length < 10 && !isViewMode && (
                 <div>

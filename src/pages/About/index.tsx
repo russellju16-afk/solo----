@@ -1,7 +1,13 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 
 const About: React.FC = () => {
+  const { companyInfo } = useCompanyInfo()
+  const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司'
+  const companyIntro = companyInfo?.introduction || companyInfo?.short_description || '西安超群粮油贸易有限公司是一家专业的粮油批发服务商，拥有强大的仓储、配送和服务能力'
+  const bannerImage = companyInfo?.banner_image
+
   // 发展历程数据
   const timeline = [
     {
@@ -53,15 +59,16 @@ const About: React.FC = () => {
   ]
 
   // 服务渠道数据
-  const channels = [
-    '高校', '团餐公司', '社会餐饮', '商超', '食品厂', '社区团购平台', '线上平台'
-  ]
+  const channels = useMemo(() => {
+    if (companyInfo?.service_channels) return companyInfo.service_channels.split(/[，,]/).filter(Boolean)
+    return ['高校', '团餐公司', '社会餐饮', '商超', '食品厂', '社区团购平台', '线上平台']
+  }, [companyInfo])
 
   return (
     <div className="py-12">
       <Helmet>
-        <title>关于我们 - 西安超群粮油贸易有限公司</title>
-        <meta name="description" content="西安超群粮油贸易有限公司成立于2010年，是一家专业的粮油批发服务商，拥有强大的仓储、配送和服务能力" />
+        <title>关于我们 - {companyName}</title>
+        <meta name="description" content={companyInfo?.seo_description || companyIntro} />
       </Helmet>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,7 +76,7 @@ const About: React.FC = () => {
         <section className="mb-16">
           <div className="text-center mb-12">
             <h1 className="section-title">关于我们</h1>
-            <p className="section-subtitle">西安超群粮油贸易有限公司是一家专业的粮油批发服务商，成立于2010年，拥有强大的仓储、配送和服务能力</p>
+            <p className="section-subtitle">{companyIntro}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-8">
@@ -77,17 +84,13 @@ const About: React.FC = () => {
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">公司简介</h2>
                 <p className="text-gray-600 leading-relaxed">
-                  西安超群粮油贸易有限公司成立于2010年，是一家专业的粮油批发服务商，主要面向高校、团餐公司、社会餐饮、商超、食品厂、社区团购平台、线上平台等客户，提供大米、面粉、食用油等多种粮油产品。
-                </p>
-                <p className="text-gray-600 leading-relaxed">
-                  公司拥有5000平方米的现代化仓储设施，采用先进的仓储管理系统，确保货物安全、卫生、高效存储。同时，公司还拥有专业的配送团队和车队，提供当日/次日发货服务，覆盖西安及周边地区。
-                </p>
-                <p className="text-gray-600 leading-relaxed">
-                  公司始终坚持"诚信为本，质量第一，客户至上，合作共赢"的价值观，致力于为客户提供优质、安全、高效的粮油供应服务，助力客户事业发展。经过多年的发展，公司已经成为西安地区具有影响力的粮油批发服务商之一。
+                  {companyInfo?.description || companyIntro}
                 </p>
               </div>
               <div className="bg-light rounded-lg p-6 flex items-center justify-center">
-                <span className="text-gray-400 text-xl">公司形象图片</span>
+                {bannerImage
+                  ? <img src={bannerImage} alt="公司形象" className="max-h-80 object-contain" />
+                  : <span className="text-gray-400 text-xl">公司形象图片</span>}
               </div>
             </div>
           </div>

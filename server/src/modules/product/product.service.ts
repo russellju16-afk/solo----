@@ -1,13 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
+import { ProductCategory } from './entities/product-category.entity';
+import { ProductBrand } from './entities/product-brand.entity';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product) private productRepository: Repository<Product>,
+    @InjectRepository(ProductCategory) private categoryRepository: Repository<ProductCategory>,
+    @InjectRepository(ProductBrand) private brandRepository: Repository<ProductBrand>,
+    @InjectRepository(ProductImage) private imageRepository: Repository<ProductImage>,
   ) {}
 
   // 构建查询条件
@@ -66,6 +71,63 @@ export class ProductService {
     return qb;
   }
 
+  // 将前端传入的 id 映射为实体关系，确保外键存在
+  private async buildRelations(categoryId?: number, brandId?: number) {
+    const relations: Partial<Product> = {};
+
+    if (categoryId !== undefined) {
+      const category = await this.categoryRepository.findOne({ where: { id: categoryId } });
+      if (!category) {
+        throw new BadRequestException('分类不存在');
+      }
+      relations.category = category;
+    }
+
+    if (brandId !== undefined) {
+      const brand = await this.brandRepository.findOne({ where: { id: brandId } });
+      if (!brand) {
+        throw new BadRequestException('品牌不存在');
+      }
+      relations.brand = brand;
+    }
+
+    return relations;
+  }
+
+  // 保存/替换产品图片，保持排序
+  private async replaceImages(productId: number, imageUrls?: string[]) {
+    if (imageUrls === undefined) return;
+
+    await this.imageRepository
+      .createQueryBuilder()
+      .delete()
+      .where('productId = :productId', { productId })
+      .execute();
+
+    if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+      return;
+    }
+
+    const records = imageUrls.map((url, index) =>
+      this.imageRepository.create({
+        url,
+        sort_order: index,
+        product: { id: productId } as Product,
+      }),
+    );
+    await this.imageRepository.save(records);
+  }
+
+  private splitPayload(dto: any) {
+    const { category_id, brand_id, images, ...rest } = dto;
+    return {
+      rest,
+      categoryId: category_id !== undefined ? Number(category_id) : undefined,
+      brandId: brand_id !== undefined ? Number(brand_id) : undefined,
+      imageUrls: Array.isArray(images) ? images : undefined,
+    };
+  }
+
   // 获取产品列表（支持分页和筛选）
   async findAll(query: any): Promise<any> {
     const page = parseInt(query.page || '1');
@@ -105,12 +167,36 @@ export class ProductService {
 
   // 创建产品
   async create(createProductDto: any): Promise<any> {
-    return this.productRepository.save(createProductDto);
+    const { rest, categoryId, brandId, imageUrls } = this.splitPayload(createProductDto);
+    const relations = await this.buildRelations(categoryId, brandId);
+
+    const product = await this.productRepository.save({
+      ...rest,
+      ...relations,
+    });
+
+    await this.replaceImages(product.id, imageUrls);
+    return this.findOneById(product.id);
   }
 
   // 更新产品
   async update(id: number, updateProductDto: any): Promise<Product> {
-    await this.productRepository.update(id, updateProductDto);
+    const existing = await this.productRepository.findOne({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('产品不存在');
+    }
+
+    const { rest, categoryId, brandId, imageUrls } = this.splitPayload(updateProductDto);
+    const relations = await this.buildRelations(categoryId, brandId);
+
+    await this.productRepository.save({
+      ...existing,
+      ...rest,
+      ...relations,
+      id,
+    });
+
+    await this.replaceImages(id, imageUrls);
     return this.findOneById(id);
   }
 

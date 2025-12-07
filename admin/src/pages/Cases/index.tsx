@@ -4,6 +4,7 @@ import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, F
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { caseService } from '../../services/content';
 import dayjs from 'dayjs';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { Option } = Select;
 
@@ -17,15 +18,16 @@ const Cases: React.FC = () => {
   const [currentCase, setCurrentCase] = useState<any>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const [category, setCategory] = useState<string | undefined>();
+  const [industryType, setIndustryType] = useState<string | undefined>();
   const [status, setStatus] = useState<string | undefined>();
 
   // 分类选项
   const categoryOptions = [
-    { label: '粮油贸易', value: 'grain_trade' },
-    { label: '物流配送', value: 'logistics' },
-    { label: '仓储服务', value: 'warehousing' },
-    { label: '其他服务', value: 'other' },
+    { label: '高校', value: '高校' },
+    { label: '团餐', value: '团餐' },
+    { label: '商超', value: '商超' },
+    { label: '食品加工', value: '食品加工' },
+    { label: '其他', value: '其他' },
   ];
 
   // 状态选项
@@ -42,18 +44,18 @@ const Cases: React.FC = () => {
         page: currentPage,
         pageSize,
         keyword: searchText,
-        category,
+        industry_type: industryType,
         status,
       };
       const res = await caseService.getCases(params);
       setCasesList(res.data || []);
-      setTotal(res.data.total || 0);
+      setTotal(res.total || 0);
     } catch (error) {
       message.error('获取案例列表失败');
     } finally {
       setLoading(false);
     }
-  }, [category, currentPage, pageSize, searchText, status]);
+  }, [industryType, currentPage, pageSize, searchText, status]);
 
   // 初始加载
   useEffect(() => {
@@ -69,7 +71,7 @@ const Cases: React.FC = () => {
   // 重置搜索
   const handleReset = () => {
     setSearchText('');
-    setCategory(undefined);
+    setIndustryType(undefined);
     setStatus(undefined);
     setCurrentPage(1);
     fetchCases();
@@ -151,8 +153,8 @@ const Cases: React.FC = () => {
     listType: 'picture-card' as const,
     className: 'avatar-uploader',
     showUploadList: true,
-    action: 'https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188',
-    beforeUpload: () => false, // 手动上传
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
   };
 
   // 表格列配置
@@ -164,19 +166,25 @@ const Cases: React.FC = () => {
       width: 80,
     },
     {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
+      title: '客户名称',
+      dataIndex: 'customer_name',
+      key: 'customer_name',
       ellipsis: true,
     },
     {
-      title: '分类',
-      dataIndex: 'category',
-      key: 'category',
-      render: (category: string) => {
-        const option = categoryOptions.find(opt => opt.value === category);
-        return <Tag color="blue">{option?.label || category}</Tag>;
+      title: '行业类型',
+      dataIndex: 'industry_type',
+      key: 'industry_type',
+      render: (industry: string) => {
+        const option = categoryOptions.find(opt => opt.value === industry);
+        return <Tag color="blue">{option?.label || industry}</Tag>;
       },
+    },
+    {
+      title: '摘要',
+      dataIndex: 'summary',
+      key: 'summary',
+      ellipsis: true,
     },
     {
       title: '封面图',
@@ -264,14 +272,14 @@ const Cases: React.FC = () => {
           />
         </Form.Item>
 
-        <Form.Item label="分类">
+        <Form.Item label="行业类型">
           <Select
-            placeholder="选择分类"
+            placeholder="选择行业类型"
             allowClear
             size="middle"
             style={{ width: 120 }}
-            value={category}
-            onChange={(value) => setCategory(value)}
+            value={industryType}
+            onChange={(value) => setIndustryType(value)}
           >
             {categoryOptions.map(option => (
               <Option key={option.value} value={option.value}>
@@ -336,19 +344,19 @@ const Cases: React.FC = () => {
           initialValues={{ status: 'draft' }}
         >
           <Form.Item
-            name="title"
-            label="标题"
-            rules={[{ required: true, message: '请输入案例标题' }]}
+            name="customer_name"
+            label="客户名称"
+            rules={[{ required: true, message: '请输入客户名称' }]}
           >
-            <Input placeholder="请输入案例标题" />
+            <Input placeholder="请输入客户名称" />
           </Form.Item>
 
           <Form.Item
-            name="category"
-            label="分类"
-            rules={[{ required: true, message: '请选择案例分类' }]}
+            name="industry_type"
+            label="行业类型"
+            rules={[{ required: true, message: '请选择行业类型' }]}
           >
-            <Select placeholder="请选择案例分类">
+            <Select placeholder="请选择行业类型">
               {categoryOptions.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
@@ -360,7 +368,6 @@ const Cases: React.FC = () => {
           <Form.Item
             name="cover_image"
             label="封面图片"
-            rules={[{ required: true, message: '请上传封面图片' }]}
           >
             <Upload {...uploadProps}>
               <div>
@@ -371,11 +378,18 @@ const Cases: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="content"
-            label="内容"
-            rules={[{ required: true, message: '请输入案例内容' }]}
+            name="summary"
+            label="摘要"
           >
-            <Input.TextArea rows={10} placeholder="请输入案例内容" />
+            <Input.TextArea rows={3} placeholder="请输入案例摘要" />
+          </Form.Item>
+
+          <Form.Item
+            name="detail"
+            label="案例详情"
+            rules={[{ required: true, message: '请输入案例详情' }]}
+          >
+            <Input.TextArea rows={10} placeholder="请输入案例详情" />
           </Form.Item>
 
           <Form.Item

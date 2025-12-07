@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react'
 import Header from './Header'
 import Footer from './Footer'
+import { CompanyInfoProvider } from '@/hooks/useCompanyInfo'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -8,13 +9,15 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-light">
-      <Header />
-      <main className="bg-white">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <CompanyInfoProvider>
+      <div className="min-h-screen bg-light">
+        <Header />
+        <main className="bg-white">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </CompanyInfoProvider>
   )
 }
 
