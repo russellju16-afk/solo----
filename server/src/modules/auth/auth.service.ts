@@ -61,27 +61,21 @@ export class AuthService {
     };
   }
 
-  // 重置密码
-  async resetPassword(username: string, newPassword: string) {
-    console.log('Reset password attempt:', { username });
-    
-    // 查找用户
-    const user = await this.userService.findOneByUsername(username);
+  // 重置密码（需要已登录 & 校验旧密码）
+  async resetPassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await this.userService.findOneById(userId);
     if (!user) {
-      console.log('Reset password failed: User not found', { username });
-      throw new UnauthorizedException('用户不存在');
+      throw new UnauthorizedException('用户不存在或未登录');
     }
 
-    // 加密新密码
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password_hash);
+    if (!isOldPasswordValid) {
+      throw new UnauthorizedException('旧密码不正确');
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    // 更新密码
     await this.userService.update(user.id, { password_hash: hashedPassword });
-    
-    console.log('Password reset successful:', { username, userId: user.id });
-    
-    return {
-      message: '密码重置成功',
-    };
+
+    return { message: '密码重置成功' };
   }
 }

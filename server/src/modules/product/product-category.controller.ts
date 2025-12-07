@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nes
 import { ProductCategoryService } from './product-category.service';
 import { AuthGuard } from '@nestjs/passport';
 
+// Admin 分类管理路由统一暴露为 /api/admin/categories/**
 @Controller('admin/categories')
 @UseGuards(AuthGuard('jwt'))
 export class ProductCategoryController {

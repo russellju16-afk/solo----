@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nes
 import { ProductBrandService } from './product-brand.service';
 import { AuthGuard } from '@nestjs/passport';
 
+// Admin 品牌管理路由统一暴露为 /api/admin/brands/**
 @Controller('admin/brands')
 @UseGuards(AuthGuard('jwt'))
 export class ProductBrandController {

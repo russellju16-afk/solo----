@@ -1,9 +1,11 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
-@Controller('api/auth')
+// Auth 路由统一暴露为 /api/auth/**
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -12,10 +14,10 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post('reset-password')
-  async resetPassword(@Body() body: { username: string; newPassword: string }) {
-    const { username, newPassword } = body;
-    return this.authService.resetPassword(username, newPassword);
+  async resetPassword(@Req() req, @Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(req.user.userId, dto.oldPassword, dto.newPassword);
   }
 
   @Get('profile')

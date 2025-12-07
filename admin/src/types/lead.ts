@@ -10,18 +10,13 @@ export type ChannelType =
   | 'other';
 
 // 意向品类
-export interface CategoryInterest {
-  categoryId: number;
-  categoryName: string;
-}
+export type CategoryInterest = 'rice' | 'flour' | 'oil' | 'other';
 
 // 月度采购量区间
 export type MonthlyVolumeSegment = 
-  | 'less_than_10k'
-  | '10k_50k'
-  | '50k_100k'
-  | '100k_500k'
-  | 'more_than_500k';
+  | 'lt_5t'
+  | 'between_5_20t'
+  | 'gt_20t';
 
 // 线索状态
 export type LeadStatus = 'new' | 'processing' | 'won' | 'lost';

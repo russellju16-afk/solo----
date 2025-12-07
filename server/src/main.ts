@@ -6,6 +6,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = process.env.PORT || 3002;
   
+  // 全局路由前缀，所有接口统一以 /api 开头
+  app.setGlobalPrefix('api');
+  
   // 全局管道，用于验证请求体
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

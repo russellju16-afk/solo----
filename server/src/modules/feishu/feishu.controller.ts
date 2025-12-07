@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, UseGuards } from '@nestjs/common';
 import { FeishuService } from './feishu.service';
 import { AuthGuard } from '@nestjs/passport';
 
+// Admin 飞书配置路由统一暴露为 /api/admin/feishu/**
 @Controller('admin/feishu')
 @UseGuards(AuthGuard('jwt'))
 export class FeishuController {

@@ -39,19 +39,14 @@ http.interceptors.response.use(
       const { status, data } = error.response
       
       if (status === 401) {
-        const { token, logout } = useAuthStore.getState()
         const requestUrl = error.config?.url || ''
-        const isLoginApi = requestUrl.includes('/auth/login')
-        const isOnLoginPage = window.location.pathname === '/login'
-
-        if (!isLoginApi && token && !isOnLoginPage) {
-          message.error('登录已过期，请重新登录')
-          logout()
-          window.location.href = '/login'
-        }
+        console.warn('[ADMIN HTTP 401]', { url: requestUrl, message: data?.message })
+        // 这里只提示，不自动退出登录
+        message.error(data?.message || '当前账号无权限或登录状态异常，请稍后重试')
+        return Promise.reject(error)
       } else {
         // 其他错误，显示错误信息
-        message.error(data.message || '请求失败，请稍后重试')
+        message.error(data?.message || '请求失败，请稍后重试')
       }
     } else if (error.request) {
       // 请求已发出，但没有收到响应

@@ -22,6 +22,7 @@ import {
   STATUS_TAG_COLOR_MAP,
   VOLUME_SEGMENT_MAP,
   formatDate,
+  CATEGORY_LABEL_MAP,
 } from '../../utils/lead';
 
 const { Option } = Select;
@@ -222,7 +223,7 @@ const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
           <Descriptions title="业务信息" bordered column={2} style={{ marginBottom: 16 }}>
             <Descriptions.Item label="意向品类">
               {lead.interestedCategories && lead.interestedCategories.length > 0 
-                ? lead.interestedCategories.map(cat => cat.categoryName).join('、') 
+                ? lead.interestedCategories.map(cat => CATEGORY_LABEL_MAP[cat] || cat).join('、') 
                 : '-'}
             </Descriptions.Item>
             <Descriptions.Item label="预计月采购量">

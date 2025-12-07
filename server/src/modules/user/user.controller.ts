@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } fro
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 
+// Admin 用户路由统一暴露为 /api/admin/users/**
 @Controller('admin/users')
 @UseGuards(AuthGuard('jwt'))
 export class UserController {

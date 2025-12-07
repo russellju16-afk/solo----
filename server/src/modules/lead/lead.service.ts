@@ -5,6 +5,7 @@ import { Lead } from './entities/lead.entity';
 import { UserService } from '../user/user.service';
 import { FeishuService } from '../feishu/feishu.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { LeadItemDto, LeadListResponseDto } from './dto/lead-list-response.dto';
 
 @Injectable()
 export class LeadService {
@@ -61,30 +62,97 @@ export class LeadService {
   }
 
   // 获取线索列表（支持分页和筛选）
-  async findAll(query: any): Promise<any> {
-    const page = parseInt(query.page || '1');
-    const pageSize = parseInt(query.pageSize || '10');
-    const qb = this.buildQueryBuilder(query);
+  async findAll(query: any): Promise<LeadListResponseDto> {
+    const page = parseInt(query.page || '1', 10);
+    const pageSize = parseInt(query.pageSize || '10', 10);
+    const qb = this.buildQueryBuilder(query)
+      .leftJoin('lead.owner', 'owner')
+      .select([
+        'lead.id',
+        'lead.name',
+        'lead.companyName',
+        'lead.phone',
+        'lead.city',
+        'lead.channelType',
+        'lead.interestedCategories',
+        'lead.monthlyVolumeSegment',
+        'lead.brandRequirement',
+        'lead.description',
+        'lead.productId',
+        'lead.source',
+        'lead.status',
+        'lead.created_at',
+        'owner.name',
+      ]);
 
-    const [leads, total] = await qb
+    const total = await qb.getCount();
+    const rows = await qb
+      .clone()
       .skip((page - 1) * pageSize)
       .take(pageSize)
-      .getManyAndCount();
+      .getRawMany();
+
+    const toArray = (value: any) => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') return value ? value.split(',') : [];
+      return [];
+    };
+
+    const items: LeadItemDto[] = rows.map((row: any) => ({
+      id: row.lead_id,
+      name: row.lead_name,
+      companyName: row.lead_companyName ?? row.lead_company_name,
+      phone: row.lead_phone,
+      city: row.lead_city,
+      channelType: row.lead_channelType ?? row.lead_channel_type,
+      interestedCategories: toArray(row.lead_interestedCategories ?? row.lead_interested_categories),
+      monthlyVolumeSegment: row.lead_monthlyVolumeSegment ?? row.lead_monthly_volume_segment,
+      brandRequirement: row.lead_brandRequirement ?? row.lead_brand_requirement,
+      description: row.lead_description,
+      productId: row.lead_productId ?? row.lead_product_id,
+      source: row.lead_source,
+      status: row.lead_status,
+      createdAt: row.lead_created_at,
+      ownerName: row.owner_name,
+    }));
 
     return {
-      data: leads,
+      items,
       total,
-      page,
-      pageSize,
     };
   }
 
   // 根据ID查找线索
-  async findOneById(id: number): Promise<Lead | undefined> {
-    return this.leadRepository.findOne({
+  async findOneById(id: number): Promise<any> {
+    const lead = await this.leadRepository.findOne({
       where: { id },
       relations: ['owner'],
     });
+    if (!lead) return undefined;
+    const toArray = (value: any) => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') return value ? value.split(',') : [];
+      return [];
+    };
+    return {
+      id: lead.id,
+      name: lead.name,
+      companyName: lead.companyName,
+      phone: lead.phone,
+      city: lead.city,
+      channelType: lead.channelType,
+      interestedCategories: toArray(lead.interestedCategories),
+      monthlyVolumeSegment: lead.monthlyVolumeSegment,
+      brandRequirement: lead.brandRequirement,
+      description: lead.description,
+      productId: lead.productId,
+      source: lead.source,
+      status: lead.status,
+      ownerId: lead.owner?.id,
+      ownerName: lead.owner?.name,
+      createdAt: lead.createdAt,
+      updatedAt: lead.updatedAt,
+    };
   }
 
   // 创建线索
@@ -151,7 +219,8 @@ export class LeadService {
 
   // 导出线索
   async export(query: any): Promise<Lead[]> {
-    const qb = this.buildQueryBuilder(query);
+    const qb = this.buildQueryBuilder(query)
+      .leftJoinAndSelect('lead.owner', 'owner');
     return qb.getMany();
   }
 }

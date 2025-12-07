@@ -6,20 +6,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 interface Lead {
   id: number;
   name: string;
-  company_name: string;
+  companyName: string;
   phone: string;
   city: string;
-  channel_type: string;
+  channelType: string;
   source: string;
-  status: number;
+  status: string;
   owner: { id: number; name: string } | null;
-  interested_categories: string[];
-  monthly_volume_segment: string;
-  brand_requirement: string;
+  interestedCategories: string[];
+  monthlyVolumeSegment: string;
+  brandRequirement: string;
   description: string;
-  created_at: string;
-  updated_at: string;
-  product_id: number | null;
+  createdAt: string;
+  updatedAt: string;
+  productId: number | null;
 }
 
 const LeadDetail: React.FC = () => {
@@ -28,13 +28,13 @@ const LeadDetail: React.FC = () => {
   const [lead, setLead] = useState<Lead | null>(null);
 
   const channelTypeOptions = [
-    { label: '高校', value: '高校' },
-    { label: '团餐公司', value: '团餐公司' },
-    { label: '社会餐饮', value: '社会餐饮' },
-    { label: '商超', value: '商超' },
-    { label: '食品厂', value: '食品厂' },
-    { label: '社区团购平台', value: '社区团购平台' },
-    { label: '线上平台', value: '线上平台' },
+    { label: '高校', value: 'university' },
+    { label: '团餐公司', value: 'group_catering' },
+    { label: '社会餐饮', value: 'social_restaurant' },
+    { label: '商超', value: 'supermarket' },
+    { label: '食品厂', value: 'food_factory' },
+    { label: '社区团购平台', value: 'community_group_buying' },
+    { label: '线上平台', value: 'online_platform' },
   ];
 
   const sourceOptions = [
@@ -46,10 +46,10 @@ const LeadDetail: React.FC = () => {
   ];
 
   const statusOptions = [
-    { label: '新线索', value: 1 },
-    { label: '跟进中', value: 2 },
-    { label: '已成交', value: 3 },
-    { label: '已流失', value: 4 },
+    { label: '新线索', value: 'new' },
+    { label: '跟进中', value: 'processing' },
+    { label: '已成交', value: 'won' },
+    { label: '已流失', value: 'lost' },
   ];
 
   const formatDate = (dateString: string) => {
@@ -93,24 +93,28 @@ const LeadDetail: React.FC = () => {
           <h2>线索详情</h2>
         </Space>
         <Space>
-          <Tag color="blue">创建时间：{formatDate(lead.created_at)}</Tag>
+          <Tag color="blue">创建时间：{formatDate(lead.createdAt)}</Tag>
         </Space>
       </div>
 
       <Card title="基本信息" style={{ marginBottom: 16 }}>
         <Descriptions bordered column={2}>
           <Descriptions.Item label="姓名">{lead.name}</Descriptions.Item>
-          <Descriptions.Item label="公司">{lead.company_name || '-'}</Descriptions.Item>
+          <Descriptions.Item label="公司">{lead.companyName || '-'}</Descriptions.Item>
           <Descriptions.Item label="电话">{lead.phone}</Descriptions.Item>
           <Descriptions.Item label="城市">{lead.city || '-'}</Descriptions.Item>
           <Descriptions.Item label="渠道类型">
-            {channelTypeOptions.find(opt => opt.value === lead.channel_type)?.label || lead.channel_type}
+            {channelTypeOptions.find(opt => opt.value === lead.channelType)?.label || lead.channelType}
           </Descriptions.Item>
           <Descriptions.Item label="来源">
             {sourceOptions.find(opt => opt.value === lead.source)?.label || lead.source}
           </Descriptions.Item>
           <Descriptions.Item label="状态">
-            <Tag color={statusOptions.find(opt => opt.value === lead.status)?.label === '新线索' ? 'blue' : statusOptions.find(opt => opt.value === lead.status)?.label === '跟进中' ? 'orange' : statusOptions.find(opt => opt.value === lead.status)?.label === '已成交' ? 'green' : 'red'}>
+            <Tag color={
+              lead.status === 'new' ? 'blue' :
+              lead.status === 'processing' ? 'orange' :
+              lead.status === 'won' ? 'green' : 'red'
+            }>
               {statusOptions.find(opt => opt.value === lead.status)?.label || '未知'}
             </Tag>
           </Descriptions.Item>
@@ -122,13 +126,13 @@ const LeadDetail: React.FC = () => {
         <Descriptions bordered column={2}>
           <Descriptions.Item label="意向品类">
             <Space>
-              {lead.interested_categories?.map((category: string, index: number) => (
+              {lead.interestedCategories?.map((category: string, index: number) => (
                 <Tag key={index}>{category}</Tag>
               )) || '-'}
             </Space>
           </Descriptions.Item>
-          <Descriptions.Item label="月度用量区间">{lead.monthly_volume_segment || '-'}</Descriptions.Item>
-          <Descriptions.Item label="品牌要求" span={2}>{lead.brand_requirement || '-'}</Descriptions.Item>
+          <Descriptions.Item label="月度用量区间">{lead.monthlyVolumeSegment || '-'}</Descriptions.Item>
+          <Descriptions.Item label="品牌要求" span={2}>{lead.brandRequirement || '-'}</Descriptions.Item>
           <Descriptions.Item label="需求描述" span={2}>{lead.description || '-'}</Descriptions.Item>
         </Descriptions>
       </Card>
@@ -144,9 +148,9 @@ const LeadDetail: React.FC = () => {
         {/* 其他信息 */}
         <Tabs.TabPane tab="其他信息" key="other">
           <Descriptions bordered>
-            <Descriptions.Item label="创建时间">{formatDate(lead.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="更新时间">{formatDate(lead.updated_at)}</Descriptions.Item>
-            <Descriptions.Item label="关联产品ID">{lead.product_id || '-'}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">{formatDate(lead.createdAt)}</Descriptions.Item>
+            <Descriptions.Item label="更新时间">{formatDate(lead.updatedAt)}</Descriptions.Item>
+            <Descriptions.Item label="关联产品ID">{lead.productId || '-'}</Descriptions.Item>
           </Descriptions>
         </Tabs.TabPane>
       </Tabs>

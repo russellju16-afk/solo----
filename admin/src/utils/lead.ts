@@ -42,11 +42,17 @@ export const SOURCE_LABEL_MAP: Record<string, string> = {
 
 // 月度采购量区间映射
 export const VOLUME_SEGMENT_MAP: Record<string, string> = {
-  less_than_10k: '10万以下',
-  '10k_50k': '10-50万',
-  '50k_100k': '50-100万',
-  '100k_500k': '100-500万',
-  more_than_500k: '500万以上',
+  lt_5t: '小于5吨',
+  between_5_20t: '5-20吨',
+  gt_20t: '大于20吨',
+};
+
+// 品类映射
+export const CATEGORY_LABEL_MAP: Record<string, string> = {
+  rice: '大米',
+  flour: '面粉',
+  oil: '食用油',
+  other: '其他',
 };
 
 // 手机号脱敏处理

@@ -14,16 +14,25 @@ export class LeadFollowupService {
   ) {}
 
   // 获取线索的所有跟进记录
-  async findByLeadId(leadId: number): Promise<LeadFollowup[]> {
-    return this.followupRepository.find({
+  async findByLeadId(leadId: number): Promise<any[]> {
+    const records = await this.followupRepository.find({
       where: { lead: { id: leadId } },
       relations: ['operator'],
       order: { created_at: 'DESC' },
     });
+
+    return records.map((record) => ({
+      id: record.id,
+      operatorId: record.operator?.id,
+      operatorName: record.operator?.name,
+      note: record.note,
+      statusAfter: record.status_after,
+      createdAt: record.created_at,
+    }));
   }
 
   // 创建跟进记录
-  async create(leadId: number, createFollowupDto: any): Promise<LeadFollowup> {
+  async create(leadId: number, operatorId: number, createFollowupDto: any): Promise<LeadFollowup> {
     // 检查线索是否存在
     const lead = await this.leadRepository.findOne({ where: { id: leadId } });
     if (!lead) {
@@ -31,7 +40,7 @@ export class LeadFollowupService {
     }
 
     // 检查用户是否存在
-    const operator = await this.userService.findOneById(createFollowupDto.operator_id);
+    const operator = await this.userService.findOneById(operatorId);
     if (!operator) {
       throw new NotFoundException('用户不存在');
     }
@@ -41,7 +50,7 @@ export class LeadFollowupService {
       lead,
       operator,
       note: createFollowupDto.note,
-      status_after: createFollowupDto.status_after,
+      status_after: createFollowupDto.statusAfter || createFollowupDto.status_after,
     });
 
     return this.followupRepository.save(followup);

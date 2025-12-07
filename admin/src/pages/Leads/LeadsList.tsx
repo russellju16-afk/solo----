@@ -13,6 +13,7 @@ import {
   STATUS_TAG_COLOR_MAP,
   maskPhone,
   formatDate,
+  CATEGORY_LABEL_MAP,
 } from '../../utils/lead';
 import LeadDetailDrawer from './LeadDetailDrawer';
 
@@ -193,7 +194,7 @@ const LeadsList: React.FC = () => {
       key: 'interestedCategories',
       render: (categories: CategoryInterest[]) => {
         if (!categories || categories.length === 0) return '-';
-        return categories.map((cat: CategoryInterest) => cat.categoryName).join('、');
+        return categories.map((cat: CategoryInterest) => CATEGORY_LABEL_MAP[cat] || cat).join('、');
       },
       ellipsis: true,
     },

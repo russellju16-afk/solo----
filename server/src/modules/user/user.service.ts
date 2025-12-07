@@ -1,15 +1,19 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import * as bcrypt from 'bcryptjs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserService implements OnModuleInit {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(Role) private roleRepository: Repository<Role>,
+    private readonly configService: ConfigService,
   ) {}
 
   // 解析角色（支持 roleId 或 role/roleName）
@@ -184,9 +188,20 @@ export class UserService implements OnModuleInit {
 
   // 初始化默认管理员用户
   private async initializeDefaultUser() {
+    const autoBootstrap = this.configService.get<string>('ADMIN_AUTO_BOOTSTRAP') === 'true';
+    const defaultPassword = this.configService.get<string>('ADMIN_DEFAULT_PASSWORD');
     const defaultUsername = 'admin';
-    const defaultPassword = '123456';
     const defaultName = '管理员';
+
+    if (!autoBootstrap) {
+      this.logger.log('ADMIN_AUTO_BOOTSTRAP 未开启，跳过默认管理员创建');
+      return;
+    }
+
+    if (!defaultPassword) {
+      this.logger.warn('ADMIN_DEFAULT_PASSWORD 未配置，无法自动创建默认管理员，请手动创建安全账户');
+      return;
+    }
 
     // 检查默认用户是否已存在
     const existingUser = await this.findOneByUsername(defaultUsername);
