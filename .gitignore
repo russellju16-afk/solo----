@@ -8,6 +8,14 @@ node_modules/
 dist/
 build/
 
+# 后端编译结果和数据库
+server/dist/
+server/solo_website.db
+server/backups/
+
+# 后端环境变量
+server/.env
+
 # 系统文件
 .DS_Store
 
