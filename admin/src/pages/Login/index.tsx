@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
 import http from '../../services/http'
 import './index.css'
+import { AUTH_TOKEN_KEY } from '../../constants/auth'
 
 const { Title } = Typography
 
@@ -16,19 +17,15 @@ const Login: React.FC = () => {
   const [loading, setLoading] = React.useState(false)
 
   React.useEffect(() => {
-    const saved = localStorage.getItem('admin-remembered-credentials')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        form.setFieldsValue({
-          username: parsed.username,
-          password: parsed.password,
-          remember: true,
-        })
-      } catch (e) {
-        // ignore malformed cache
-      }
+    const savedUsername = localStorage.getItem('admin-remembered-username')
+    if (savedUsername) {
+      form.setFieldsValue({
+        username: savedUsername,
+        remember: true,
+      })
     }
+    // 清理旧的含密码缓存
+    localStorage.removeItem('admin-remembered-credentials')
   }, [form])
 
   // 登录表单提交
@@ -41,17 +38,12 @@ const Login: React.FC = () => {
       const { token, userInfo } = response
 
       if (remember) {
-        localStorage.setItem(
-          'admin-remembered-credentials',
-          JSON.stringify({
-            username: loginValues.username,
-            password: loginValues.password,
-          }),
-        )
+        localStorage.setItem('admin-remembered-username', loginValues.username)
       } else {
-        localStorage.removeItem('admin-remembered-credentials')
+        localStorage.removeItem('admin-remembered-username')
       }
 
+      localStorage.setItem(AUTH_TOKEN_KEY, token)
       login(token, userInfo)
       // 跳转到首页
       message.success('登录成功')

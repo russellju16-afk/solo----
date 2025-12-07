@@ -1,6 +1,19 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { message } from 'antd'
 import { useAuthStore } from '../store/auth'
+import { AUTH_TOKEN_KEY, LEGACY_TOKEN_KEYS } from '../constants/auth'
+
+const readToken = () => {
+  const { token: storeToken } = useAuthStore.getState()
+  if (storeToken) return storeToken
+  const legacy = LEGACY_TOKEN_KEYS.map((key) => localStorage.getItem(key)).find(Boolean)
+  if (legacy) {
+    localStorage.setItem(AUTH_TOKEN_KEY, legacy)
+    LEGACY_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key))
+    return legacy
+  }
+  return localStorage.getItem(AUTH_TOKEN_KEY)
+}
 
 // 创建axios实例
 const http: AxiosInstance = axios.create({
@@ -11,11 +24,13 @@ const http: AxiosInstance = axios.create({
   },
 })
 
+// 避免重复弹出 401 提示
+let isHandlingUnauthorized = false
+
 // 请求拦截器
 http.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const { token: storeToken } = useAuthStore.getState()
-    const token = storeToken || localStorage.getItem('token')
+    const token = readToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -39,11 +54,22 @@ http.interceptors.response.use(
       const { status, data } = error.response
       
       if (status === 401) {
+        const { logout } = useAuthStore.getState()
         const requestUrl = error.config?.url || ''
-        console.warn('[ADMIN HTTP 401]', { url: requestUrl, message: data?.message })
-        // 这里只提示，不自动退出登录
-        message.error(data?.message || '当前账号无权限或登录状态异常，请稍后重试')
-        return Promise.reject(error)
+        const isLoginApi = requestUrl.includes('/auth/login')
+        const isOnLoginPage = window.location.pathname === '/login'
+        const token = readToken()
+        // 仅对需要鉴权的后台接口触发自动登出，并且当前持有 token
+        const isAdminApi = requestUrl.includes('/admin/')
+
+        if (token && !isLoginApi && isAdminApi && !isOnLoginPage && !isHandlingUnauthorized) {
+          isHandlingUnauthorized = true
+          message.error(data?.message || '登录状态已过期，请重新登录')
+          logout()
+          localStorage.removeItem(AUTH_TOKEN_KEY)
+          window.location.href = '/login'
+          setTimeout(() => { isHandlingUnauthorized = false }, 1500)
+        }
       } else {
         // 其他错误，显示错误信息
         message.error(data?.message || '请求失败，请稍后重试')

@@ -30,7 +30,7 @@ const Products: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const res = await categoryService.getCategories();
-        setCategories(res.data);
+        setCategories(res?.data ?? res ?? []);
       } catch (error) {
         message.error('获取分类失败');
       }
@@ -43,7 +43,7 @@ const Products: React.FC = () => {
     const fetchBrands = async () => {
       try {
         const res = await brandService.getBrands();
-        setBrands(res.data);
+        setBrands(res?.data ?? res ?? []);
       } catch (error) {
         message.error('获取品牌失败');
       }
@@ -240,6 +240,10 @@ const Products: React.FC = () => {
       ),
     },
   ];
+
+  if (!products) {
+    return <div>加载中...</div>;
+  }
 
   return (
     <div>

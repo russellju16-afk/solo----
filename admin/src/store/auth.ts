@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { AUTH_TOKEN_KEY, LEGACY_TOKEN_KEYS } from '../constants/auth'
 
 interface User {
   id: number
@@ -23,11 +24,14 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       login: (token, user) => {
-        localStorage.setItem('token', token)
+        localStorage.setItem(AUTH_TOKEN_KEY, token)
+        // 清理旧版 token 存储
+        LEGACY_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key))
         set({ token, user })
       },
       logout: () => {
-        localStorage.removeItem('token')
+        localStorage.removeItem(AUTH_TOKEN_KEY)
+        LEGACY_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key))
         set({ token: null, user: null })
       },
     }),

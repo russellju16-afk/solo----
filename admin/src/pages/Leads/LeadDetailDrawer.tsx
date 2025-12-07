@@ -58,8 +58,11 @@ const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
     
     setLoading(true);
     try {
-      const res = await leadService.getLeadById(leadId);
-      setLead(res);
+      const [res, followups] = await Promise.all([
+        leadService.getLeadById(leadId),
+        leadService.getFollowups(leadId),
+      ]);
+      setLead({ ...res, followups });
       setCurrentStatus(res?.status || 'new');
     } catch (error) {
       message.error('获取线索详情失败');

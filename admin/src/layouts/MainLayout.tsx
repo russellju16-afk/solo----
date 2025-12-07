@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
+import { AUTH_TOKEN_KEY, LEGACY_TOKEN_KEYS } from '../constants/auth'
 
 const { Header, Sider, Content } = AntLayout
 
@@ -32,7 +33,16 @@ const MainLayout: React.FC = () => {
 
   // 检查用户是否登录
   React.useEffect(() => {
-    const savedToken = localStorage.getItem('token')
+    let savedToken = localStorage.getItem(AUTH_TOKEN_KEY)
+    if (!savedToken) {
+      const legacy = LEGACY_TOKEN_KEYS.map((k) => localStorage.getItem(k)).find(Boolean)
+      if (legacy) {
+        localStorage.setItem(AUTH_TOKEN_KEY, legacy)
+        LEGACY_TOKEN_KEYS.forEach((k) => localStorage.removeItem(k))
+        savedToken = legacy
+      }
+    }
+
     if (!token && !savedToken) {
       navigate('/login')
     }
