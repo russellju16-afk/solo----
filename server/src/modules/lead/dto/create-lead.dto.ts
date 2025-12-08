@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsString as IsStringEach } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
 
 export class CreateLeadDto {
   @IsString()
@@ -23,7 +23,7 @@ export class CreateLeadDto {
 
   @IsOptional()
   @IsArray()
-  @IsStringEach()
+  @IsString({ each: true })
   interestedCategories?: string[];
 
   @IsOptional()

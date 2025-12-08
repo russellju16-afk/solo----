@@ -202,6 +202,11 @@ export class ProductService {
 
   // 删除产品
   async delete(id: number): Promise<void> {
+    await this.imageRepository
+      .createQueryBuilder()
+      .delete()
+      .where('productId = :productId', { productId: id })
+      .execute();
     await this.productRepository.delete(id);
   }
 

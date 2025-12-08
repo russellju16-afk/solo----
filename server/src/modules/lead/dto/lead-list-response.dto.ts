@@ -19,4 +19,6 @@ export class LeadItemDto {
 export class LeadListResponseDto {
   items: LeadItemDto[];
   total: number;
+  page?: number;
+  pageSize?: number;
 }

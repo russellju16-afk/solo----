@@ -3,8 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { solutionService } from '../../services/content';
-import dayjs from 'dayjs';
-import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
 
 const { Option } = Select;
 
@@ -123,12 +121,17 @@ const Solutions: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // 处理图片
-      const coverImage = values.cover_image && values.cover_image[0]?.url;
       const solutionData = {
         ...values,
-        cover_image: coverImage,
-        published_at: values.published_at ? values.published_at.format('YYYY-MM-DD HH:mm:ss') : null,
+        pain_points: values.pain_points
+          ? values.pain_points.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
+          : [],
+        solutions: values.solutions
+          ? values.solutions.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
+          : [],
+        product_ids: values.product_ids
+          ? values.product_ids.split(',').map((id: string) => Number(id.trim())).filter((id: number) => !Number.isNaN(id))
+          : [],
       };
       
       if (currentSolution) {
@@ -149,16 +152,6 @@ const Solutions: React.FC = () => {
     }
   };
 
-  // 图片上传配置
-  const uploadProps = {
-    name: 'file',
-    listType: 'picture-card' as const,
-    className: 'avatar-uploader',
-    showUploadList: true,
-    accept: IMAGE_ACCEPT,
-    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
-  };
-
   // 表格列配置
   const columns = [
     {
@@ -174,36 +167,45 @@ const Solutions: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: '分类',
-      dataIndex: 'category',
-      key: 'category',
-      render: (category: string) => {
-        const option = categoryOptions.find(opt => opt.value === category);
-        return <Tag color="blue">{option?.label || category}</Tag>;
+      title: '渠道类型',
+      dataIndex: 'channel_type',
+      key: 'channel_type',
+      render: (channel: string) => {
+        const option = channelOptions.find(opt => opt.value === channel);
+        return <Tag color="blue">{option?.label || channel}</Tag>;
       },
     },
     {
-      title: '封面图',
-      dataIndex: 'cover_image',
-      key: 'cover_image',
-      render: (coverImage: string) => (
-        <Image width={80} src={coverImage} alt="解决方案封面" />
+      title: '简介',
+      dataIndex: 'intro',
+      key: 'intro',
+      ellipsis: true,
+    },
+    {
+      title: '痛点',
+      dataIndex: 'pain_points',
+      key: 'pain_points',
+      render: (painPoints: string[]) => (
+        <Space wrap>
+          {painPoints?.map((item, index) => (
+            <Tag key={index} color="volcano">{item}</Tag>
+          )) || '-'}
+        </Space>
       ),
     },
     {
-      title: '发布时间',
-      dataIndex: 'published_at',
-      key: 'published_at',
-      render: (time: string) => time ? new Date(time).toLocaleString() : '-',
+      title: '状态',
+      dataIndex: 'enabled',
+      key: 'enabled',
+      render: (status: number) => {
+        const option = enabledOptions.find(opt => opt.value === status);
+        return <Tag color={status === 1 ? 'green' : 'red'}>{option?.label || status}</Tag>;
+      },
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        const option = statusOptions.find(opt => opt.value === status);
-        return <Tag color={status === 'published' ? 'green' : 'orange'}>{option?.label || status}</Tag>;
-      },
+      title: '排序',
+      dataIndex: 'sort_order',
+      key: 'sort_order',
     },
     {
       title: '创建时间',
@@ -268,16 +270,16 @@ const Solutions: React.FC = () => {
           />
         </Form.Item>
 
-        <Form.Item label="分类">
+        <Form.Item label="渠道类型">
           <Select
-            placeholder="选择分类"
+            placeholder="选择渠道类型"
             allowClear
             size="middle"
             style={{ width: 150 }}
-            value={category}
-            onChange={(value) => setCategory(value)}
+            value={channelType}
+            onChange={(value) => setChannelType(value)}
           >
-            {categoryOptions.map(option => (
+            {channelOptions.map(option => (
               <Option key={option.value} value={option.value}>
                 {option.label}
               </Option>
@@ -291,10 +293,10 @@ const Solutions: React.FC = () => {
             allowClear
             size="middle"
             style={{ width: 120 }}
-            value={status}
-            onChange={(value) => setStatus(value)}
+            value={enabled}
+            onChange={(value) => setEnabled(value)}
           >
-            {statusOptions.map(option => (
+            {enabledOptions.map(option => (
               <Option key={option.value} value={option.value}>
                 {option.label}
               </Option>
@@ -337,7 +339,7 @@ const Solutions: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ status: 'draft' }}
+          initialValues={{ enabled: 1, sort_order: 0 }}
         >
           <Form.Item
             name="title"
@@ -348,12 +350,12 @@ const Solutions: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="category"
-            label="分类"
-            rules={[{ required: true, message: '请选择解决方案分类' }]}
+            name="channel_type"
+            label="渠道类型"
+            rules={[{ required: true, message: '请选择渠道类型' }]}
           >
-            <Select placeholder="请选择解决方案分类">
-              {categoryOptions.map(option => (
+            <Select placeholder="请选择渠道类型">
+              {channelOptions.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -362,40 +364,47 @@ const Solutions: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="cover_image"
-            label="封面图片"
-            rules={[{ required: true, message: '请上传封面图片' }]}
+            name="intro"
+            label="简介"
           >
-            <Upload {...uploadProps}>
-              <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>上传封面图片</div>
-              </div>
-            </Upload>
+            <Input.TextArea rows={4} placeholder="请输入解决方案简介" />
           </Form.Item>
 
           <Form.Item
-            name="content"
-            label="内容"
-            rules={[{ required: true, message: '请输入解决方案内容' }]}
+            name="pain_points"
+            label="客户痛点（每行一条）"
           >
-            <Input.TextArea rows={10} placeholder="请输入解决方案内容" />
+            <Input.TextArea rows={4} placeholder="请输入痛点，一行一条" />
           </Form.Item>
 
           <Form.Item
-            name="published_at"
-            label="发布时间"
+            name="solutions"
+            label="解决方案（每行一条）"
           >
-            <DatePicker showTime placeholder="请选择发布时间" style={{ width: '100%' }} />
+            <Input.TextArea rows={4} placeholder="请输入解决方案要点，一行一条" />
           </Form.Item>
 
           <Form.Item
-            name="status"
+            name="product_ids"
+            label="关联产品ID（逗号分隔，可选）"
+          >
+            <Input placeholder="例如：1,2,3" />
+          </Form.Item>
+
+          <Form.Item
+            name="sort_order"
+            label="排序"
+          >
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="排序值，数字越小越靠前" />
+          </Form.Item>
+
+          <Form.Item
+            name="enabled"
             label="状态"
             rules={[{ required: true, message: '请选择解决方案状态' }]}
           >
             <Select placeholder="请选择解决方案状态">
-              {statusOptions.map(option => (
+              {enabledOptions.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>

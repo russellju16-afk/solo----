@@ -43,9 +43,10 @@ const OperationLogs: React.FC = () => {
         start_time: dateRange[0]?.format('YYYY-MM-DD HH:mm:ss'),
         end_time: dateRange[1]?.format('YYYY-MM-DD HH:mm:ss'),
       };
-      const res = await logService.getOperationLogs(params);
-      setLogsList(res.data || []);
-      setTotal(res.data.total || 0);
+      const res: any = await logService.getOperationLogs(params);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setLogsList(list);
+      setTotal(res?.total ?? res?.data?.total ?? list.length ?? 0);
     } catch (error) {
       message.error('获取操作日志失败');
     } finally {

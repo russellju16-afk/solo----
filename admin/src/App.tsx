@@ -17,10 +17,26 @@ import CompanyInfo from './pages/CompanyInfo'
 import FeishuConfig from './pages/FeishuConfig'
 import Users from './pages/Users'
 import OperationLogs from './pages/OperationLogs'
+import Profile from './pages/Profile'
 
 function App() {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: '#1E40AF',
+          colorBgLayout: '#f6f8fd',
+          colorBgContainer: '#ffffff',
+          colorText: '#0f172a',
+          colorTextSecondary: '#667085',
+          fontFamily: "'Inter', 'SF Pro Display', 'PingFang SC', 'Segoe UI', Roboto, system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+          fontSize: 14,
+          borderRadius: 8,
+          borderRadiusLG: 12,
+        },
+      }}
+    >
       <Router>
         <Routes>
           {/* 登录页 */}
@@ -47,6 +63,7 @@ function App() {
             {/* 系统设置 */}
             <Route path="users" element={<Users />} />
             <Route path="operation-logs" element={<OperationLogs />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
         </Routes>
       </Router>

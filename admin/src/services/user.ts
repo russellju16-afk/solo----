@@ -35,6 +35,10 @@ export const userService = {
   getCurrentUser: () => {
     return http.get('/admin/users/me');
   },
+  // 更新当前用户信息
+  updateCurrentUser: (data: any) => {
+    return http.put('/admin/users/me', data);
+  },
 };
 
 // 操作日志相关API
@@ -50,5 +54,12 @@ export const logService = {
   // 清空操作日志
   clearOperationLogs: () => {
     return http.delete('/admin/operation-logs/clear');
+  },
+};
+
+// 认证相关API
+export const authService = {
+  resetPassword: (data: { oldPassword: string; newPassword: string }) => {
+    return http.post('/auth/reset-password', data);
   },
 };

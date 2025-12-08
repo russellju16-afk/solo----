@@ -20,13 +20,15 @@ export class LeadService {
   // 构建查询条件
   private buildQueryBuilder(query: any) {
     const qb = this.leadRepository.createQueryBuilder('lead')
-      .leftJoinAndSelect('lead.owner', 'owner')
-      .orderBy('lead.created_at', 'DESC');
+      .orderBy('lead.created_at', 'DESC')
+      .where('1=1');
 
     // 按名称/公司/电话搜索
     if (query.keyword) {
-      qb.where('lead.name LIKE :keyword OR lead.company_name LIKE :keyword OR lead.phone LIKE :keyword', 
-        { keyword: `%${query.keyword}%` });
+      qb.andWhere(
+        'lead.name LIKE :keyword OR lead.company_name LIKE :keyword OR lead.phone LIKE :keyword',
+        { keyword: `%${query.keyword}%` },
+      );
     }
 
     // 按状态筛选
@@ -35,27 +37,32 @@ export class LeadService {
     }
 
     // 按渠道类型筛选
-    if (query.channel_type) {
-      qb.andWhere('lead.channel_type = :channelType', { channelType: query.channel_type });
+    const channelType = query.channel_type ?? query.channelType;
+    if (channelType) {
+      qb.andWhere('lead.channel_type = :channelType', { channelType });
     }
 
     // 按负责人筛选
-    if (query.owner_id) {
-      qb.andWhere('lead.ownerId = :ownerId', { ownerId: query.owner_id });
+    const ownerId = query.owner_id ?? query.ownerId;
+    if (ownerId) {
+      qb.andWhere('lead.owner_id = :ownerId', { ownerId: Number(ownerId) });
     }
 
     // 按时间段筛选
-    if (query.date_from) {
-      qb.andWhere('lead.created_at >= :dateFrom', { dateFrom: new Date(query.date_from) });
+    const dateFrom = query.date_from ?? query.dateFrom;
+    if (dateFrom) {
+      qb.andWhere('lead.created_at >= :dateFrom', { dateFrom: new Date(dateFrom) });
     }
-    if (query.date_to) {
-      qb.andWhere('lead.created_at <= :dateTo', { dateTo: new Date(query.date_to) });
+    const dateTo = query.date_to ?? query.dateTo;
+    if (dateTo) {
+      qb.andWhere('lead.created_at <= :dateTo', { dateTo: new Date(dateTo) });
     }
 
     // 按意向品类筛选
-    if (query.interested_categories) {
+    const interestedCategories = query.interested_categories ?? query.interestedCategories;
+    if (interestedCategories) {
       qb.andWhere('lead.interested_categories LIKE :categories', 
-        { categories: `%${query.interested_categories}%` });
+        { categories: `%${interestedCategories}%` });
     }
 
     return qb;
@@ -70,15 +77,15 @@ export class LeadService {
       .select([
         'lead.id',
         'lead.name',
-        'lead.companyName',
+        'lead.company_name',
         'lead.phone',
         'lead.city',
-        'lead.channelType',
-        'lead.interestedCategories',
-        'lead.monthlyVolumeSegment',
-        'lead.brandRequirement',
+        'lead.channel_type',
+        'lead.interested_categories',
+        'lead.monthly_volume_segment',
+        'lead.brand_requirement',
         'lead.description',
-        'lead.productId',
+        'lead.product_id',
         'lead.source',
         'lead.status',
         'lead.created_at',
@@ -119,6 +126,8 @@ export class LeadService {
     return {
       items,
       total,
+      page,
+      pageSize,
     };
   }
 

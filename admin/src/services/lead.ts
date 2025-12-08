@@ -13,7 +13,23 @@ import {
 export const leadService = {
   // 获取线索列表
   getLeads: (params: LeadQueryParams) => {
-    return http.get<LeadsListResponse>('/admin/leads', { params });
+    const {
+      channelType,
+      ownerId,
+      dateFrom,
+      dateTo,
+      ...rest
+    } = params || {};
+
+    return http.get<LeadsListResponse>('/admin/leads', {
+      params: {
+        ...rest,
+        channel_type: channelType,
+        owner_id: ownerId,
+        date_from: dateFrom,
+        date_to: dateTo,
+      },
+    });
   },
   // 获取线索详情
   getLeadById: (id: number) => {
@@ -37,7 +53,23 @@ export const leadService = {
   },
   // 导出线索
   exportLeads: (params: LeadQueryParams) => {
-    return http.get<Blob>('/admin/leads/export', { params, responseType: 'blob' });
+    const {
+      channelType,
+      ownerId,
+      dateFrom,
+      dateTo,
+      ...rest
+    } = params || {};
+    return http.get<Blob>('/admin/leads/export', {
+      params: {
+        ...rest,
+        channel_type: channelType,
+        owner_id: ownerId,
+        date_from: dateFrom,
+        date_to: dateTo,
+      },
+      responseType: 'blob',
+    });
   },
   // 获取线索跟进记录
   getFollowups: (leadId: number) => {

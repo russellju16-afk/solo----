@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
 import type { MenuProps } from 'antd'
-import { Layout as AntLayout, Menu, Avatar, Dropdown, Button } from 'antd'
+import { Layout as AntLayout, Menu, Avatar, Dropdown, Button, Space } from 'antd'
 import {
   UserOutlined,
   LogoutOutlined,
@@ -19,11 +19,13 @@ import {
   SettingOutlined,
   UserSwitchOutlined,
   FileSearchOutlined,
+  DownOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
 import { isAuthenticated } from '../utils/auth'
 import { redirectToLogin } from '../utils/authRedirect'
+import './MainLayout.css'
 
 const { Header, Sider, Content } = AntLayout
 
@@ -48,18 +50,27 @@ const MainLayout: React.FC = () => {
   // 用户菜单
   const userMenu = [
     {
-      key: '1',
+      key: 'profile',
       label: '个人中心',
     },
     {
-      key: '2',
+      key: 'logout',
       label: (
-        <Button type="text" danger onClick={handleLogout} icon={<LogoutOutlined />}>
+        <Button type="text" danger block icon={<LogoutOutlined />}>
           退出登录
         </Button>
       ),
     },
   ]
+
+  const handleUserMenuClick: MenuProps['onClick'] = info => {
+    if (info.key === 'profile') {
+      navigate('/profile')
+    }
+    if (info.key === 'logout') {
+      handleLogout()
+    }
+  }
 
   const routeKeys = React.useMemo(
     () => [
@@ -164,9 +175,10 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <AntLayout style={{ minHeight: '100vh' }}>
+    <AntLayout className="admin-shell">
       {/* 侧边栏 */}
       <Sider
+        className="admin-sider"
         theme="dark"
         breakpoint="lg"
         collapsedWidth="0"
@@ -174,7 +186,13 @@ const MainLayout: React.FC = () => {
           console.log(collapsed, type)
         }}
       >
-        <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6 }} />
+        <div className="sider-brand">
+          <div className="brand-mark">超群</div>
+          <div className="brand-text">
+            <span className="brand-title">超群粮油</span>
+            <span className="brand-subtitle">统一后台</span>
+          </div>
+        </div>
         <Menu
           theme="dark"
           mode="inline"
@@ -183,24 +201,35 @@ const MainLayout: React.FC = () => {
           onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
           onClick={handleMenuClick}
+          className="admin-menu"
         />
       </Sider>
-      <AntLayout>
+      <AntLayout className="admin-main">
         {/* 顶部导航 */}
-        <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 24px', background: '#fff', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
+        <Header className="admin-header">
+          <div className="header-left">
+            <span className="header-pill">超群粮油</span>
+            <span className="header-sub">统一后台</span>
+          </div>
           <Dropdown
-            menu={{ items: userMenu }}
+            menu={{ items: userMenu, onClick: handleUserMenuClick }}
             trigger={['click']}
           >
-            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <Avatar icon={<UserOutlined />} />
-              <span style={{ marginLeft: 8 }}>{user?.name || '管理员'}</span>
-            </div>
+            <Space className="header-user">
+              <Avatar size={36} icon={<UserOutlined />} />
+              <div className="user-meta">
+                <span className="user-name">{user?.name || '管理员'}</span>
+                <span className="user-role">管理员</span>
+              </div>
+              <DownOutlined />
+            </Space>
           </Dropdown>
         </Header>
         {/* 内容区域 */}
-        <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', borderRadius: 8, minHeight: 280 }}>
-          <Outlet />
+        <Content className="admin-content">
+          <div className="content-area">
+            <Outlet />
+          </div>
         </Content>
       </AntLayout>
     </AntLayout>

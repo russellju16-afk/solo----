@@ -1,10 +1,20 @@
+# ngrok.yml 配置文件
 version: "2"
 tunnels:
-  frontend:
+  # 后端API服务（端口3000）
+  backend-api:
+    proto: http
     addr: 3000
+    inspect: true  # 启用请求检查
+    
+  # 后台管理服务（端口3001）
+  admin-panel:
     proto: http
+    addr: 3001
     inspect: true
-  admin:
-    addr: 5173
+    
+  # 前台官网服务（端口5173）
+  frontend-app:
     proto: http
+    addr: 5173
     inspect: true

@@ -70,8 +70,8 @@ export interface LeadQueryParams {
 export interface LeadsListResponse {
   items: LeadListItem[];
   total: number;
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
 }
 
 // 更新线索 payload

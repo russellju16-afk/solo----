@@ -51,7 +51,7 @@ const News: React.FC = () => {
       };
       const res = await newsService.getNews(params);
       setNewsList(res.data || []);
-      setTotal(res.data.total || 0);
+      setTotal(res.total || 0);
     } catch (error) {
       message.error('获取新闻列表失败');
     } finally {

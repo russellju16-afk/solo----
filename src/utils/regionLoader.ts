@@ -22,6 +22,13 @@ export interface RegionOption {
 
 const provinceCache: { options: RegionOption[] | null } = { options: null };
 const sliceCache: Record<string, RegionOption[]> = {};
+const allTreeCache: { options: RegionOption[] | null } = { options: null };
+
+const withBase = (path: string) => {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+  const cleanPath = path.replace(/^\/+/, '');
+  return `${base}/${cleanPath}`;
+};
 
 const normalizeNodes = (nodes: RegionNode[] = []): RegionOption[] => {
   return nodes.map((node) => {
@@ -38,30 +45,72 @@ const normalizeNodes = (nodes: RegionNode[] = []): RegionOption[] => {
   });
 };
 
-export async function loadProvinceList(): Promise<RegionOption[]> {
-  if (provinceCache.options) return provinceCache.options;
-  const resp = await fetch('/regions/provinces.json');
+async function loadAllTree(): Promise<RegionOption[]> {
+  if (allTreeCache.options) return allTreeCache.options;
+  const resp = await fetch(withBase('/regions/pcas.json'));
   if (!resp.ok) {
-    throw new Error(`加载省份列表失败: ${resp.status}`);
+    throw new Error(`加载完整行政区数据失败: ${resp.status}`);
   }
   const data: RegionNode[] = await resp.json();
-  const normalized = normalizeNodes(data).map((item) => ({
-    ...item,
-    isLeaf: false, // 省级节点必须可展开
-  }));
-  provinceCache.options = normalized;
+  const normalized = normalizeNodes(data).map((item) => ({ ...item, isLeaf: false }));
+  allTreeCache.options = normalized;
   return normalized;
+}
+
+const normalizeProvinceCode = (code?: string) => {
+  if (!code) return code;
+  const trimmed = code.replace(/0+$/, '');
+  return trimmed || code;
+};
+
+const normalizeLabel = (label?: string) => label?.trim();
+
+const findNodeByCodeOrLabel = (nodes: RegionOption[], code?: string, label?: string): RegionOption | undefined => {
+  const normalizedCode = normalizeProvinceCode(code);
+  const normalizedLabel = normalizeLabel(label);
+  for (const node of nodes) {
+    if (
+      node.code === normalizedCode ||
+      node.code === code ||
+      node.value === normalizedCode ||
+      node.value === code ||
+      node.label === normalizedLabel
+    ) {
+      return node;
+    }
+    if (node.children) {
+      const found = findNodeByCodeOrLabel(node.children, code, label);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
+
+export async function loadProvinceList(): Promise<RegionOption[]> {
+  if (provinceCache.options) return provinceCache.options;
+
+  // 直接使用完整行政区树，避免单省文件缺失导致报错
+  const allTree = await loadAllTree();
+  const provinces = allTree.map((item) => ({
+    label: item.label,
+    value: item.value,
+    code: item.code,
+    isLeaf: false,
+  }));
+  provinceCache.options = provinces;
+  return provinces;
 }
 
 export async function loadRegionSlice(provinceCode: string): Promise<RegionOption[]> {
   if (sliceCache[provinceCode]) return sliceCache[provinceCode];
-  const resp = await fetch(`/regions/${provinceCode}.json`);
-  if (!resp.ok) {
-    throw new Error(`加载省份数据失败: ${provinceCode}, status ${resp.status}`);
+
+  // 统一从完整行政区树读取，避免 404
+  const allTree = await loadAllTree();
+  const target = findNodeByCodeOrLabel(allTree, provinceCode, provinceCode);
+  if (!target || !target.children) {
+    throw new Error(`未找到省份数据: ${provinceCode}`);
   }
-  const data: RegionNode[] = await resp.json();
-  const normalized = normalizeNodes(data);
+  const normalized = target.children;
   sliceCache[provinceCode] = normalized;
   return normalized;
 }
-

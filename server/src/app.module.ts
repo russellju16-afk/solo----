@@ -8,6 +8,7 @@ import { ContentModule } from './modules/content/content.module';
 import { LeadModule } from './modules/lead/lead.module';
 import { FeishuModule } from './modules/feishu/feishu.module';
 import { CompanyModule } from './modules/company/company.module';
+import { LoggingModule } from './modules/logging/logging.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CompanyModule } from './modules/company/company.module';
     LeadModule,
     FeishuModule,
     CompanyModule,
+    LoggingModule,
   ],
   controllers: [],
   providers: [],
