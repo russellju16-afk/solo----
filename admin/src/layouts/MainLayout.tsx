@@ -6,9 +6,9 @@ import {
   UserOutlined,
   LogoutOutlined,
   DashboardOutlined,
+  BarChartOutlined,
   TeamOutlined,
   AppstoreOutlined,
-  TagsOutlined,
   TrademarkCircleOutlined,
   ReadOutlined,
   PictureOutlined,
@@ -75,6 +75,7 @@ const MainLayout: React.FC = () => {
   const routeKeys = React.useMemo(
     () => [
       '/',
+      '/analytics',
       '/leads',
       '/products',
       '/product-categories',
@@ -98,6 +99,11 @@ const MainLayout: React.FC = () => {
       label: '仪表盘',
     },
     {
+      key: '/analytics',
+      icon: <BarChartOutlined />,
+      label: '数据看板',
+    },
+    {
       key: '/leads',
       icon: <TeamOutlined />,
       label: '线索管理',
@@ -107,8 +113,7 @@ const MainLayout: React.FC = () => {
       icon: <AppstoreOutlined />,
       label: '产品管理',
       children: [
-        { key: '/products', label: '产品列表', icon: <AppstoreOutlined /> },
-        { key: '/product-categories', label: '产品分类', icon: <TagsOutlined /> },
+        { key: '/products', label: '产品库', icon: <AppstoreOutlined /> },
         { key: '/product-brands', label: '品牌管理', icon: <TrademarkCircleOutlined /> },
       ],
     },
@@ -149,7 +154,7 @@ const MainLayout: React.FC = () => {
       .filter(key => key !== '/')
       .find(key => pathname === key || pathname.startsWith(`${key}/`))
 
-    if (matched) return matched
+    if (matched) return matched === '/product-categories' ? '/products' : matched
     return pathname === '/' ? '/' : ''
   }, [pathname, routeKeys])
 

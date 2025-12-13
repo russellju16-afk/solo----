@@ -2,7 +2,7 @@ import React from 'react';
 import { Cascader, CascaderProps, message } from 'antd';
 import { loadProvinceList, loadRegionSlice, RegionOption } from '@/utils/regionLoader';
 
-type RegionCascaderProps = Omit<CascaderProps<string[]>, 'options' | 'loadData'>;
+type RegionCascaderProps = Omit<CascaderProps<RegionOption, 'value', false>, 'options' | 'loadData'>;
 
 export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
   const [options, setOptions] = React.useState<RegionOption[]>([]);
@@ -17,8 +17,8 @@ export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
       });
   }, []);
 
-  const handleLoadData: CascaderProps<string[]>['loadData'] = async (selectedOptions) => {
-    const targetOption = selectedOptions[selectedOptions.length - 1] as RegionOption | undefined;
+  const handleLoadData: CascaderProps<RegionOption, 'value', false>['loadData'] = async (selectedOptions) => {
+    const targetOption = selectedOptions[selectedOptions.length - 1];
     if (!targetOption?.code) return;
 
     try {
@@ -35,7 +35,7 @@ export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
   };
 
   return (
-    <Cascader
+    <Cascader<RegionOption, 'value'>
       options={options}
       loadData={handleLoadData}
       changeOnSelect
@@ -48,4 +48,3 @@ export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
 };
 
 export default RegionCascader;
-

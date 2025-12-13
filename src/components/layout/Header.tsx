@@ -14,7 +14,6 @@ const Header: React.FC = () => {
     { label: '新闻资讯', path: '/news' },
     { label: '关于我们', path: '/about' },
     { label: '联系我们', path: '/contact' },
-    { label: '数据看板', path: '/analytics' }
   ]
 
   const handleDrawerClose = () => setIsDrawerOpen(false)

@@ -1,8 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 
 // 创建axios实例
-const http = axios.create({
+const http: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/', // 从环境变量获取baseURL
   timeout: 10000, // 10秒超时
   headers: {
@@ -53,4 +53,15 @@ http.interceptors.response.use(
   }
 );
 
-export default http;
+type HttpClient = Omit<AxiosInstance, 'get' | 'delete' | 'post' | 'put' | 'patch'> & {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
+
+// 响应拦截器已将返回值统一为 response.data，这里对 axios 方法的类型进行对齐
+const httpClient = http as unknown as HttpClient
+
+export default httpClient;

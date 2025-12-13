@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import AppLayout from './components/layout/AppLayout'
 
@@ -11,7 +11,6 @@ const Cases = lazy(() => import('./pages/Cases/index'))
 const News = lazy(() => import('./pages/News/index'))
 const About = lazy(() => import('./pages/About/index'))
 const Contact = lazy(() => import('./pages/Contact/index'))
-const Analytics = lazy(() => import('./pages/Analytics/index'))
 
 function App() {
   return (
@@ -27,7 +26,7 @@ function App() {
           <Route path="/news" element={<News />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/analytics" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </AppLayout>

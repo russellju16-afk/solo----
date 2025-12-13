@@ -1,13 +1,13 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import Login from './pages/Login'
 import Layout from './layouts/MainLayout'
 import Dashboard from './pages/Dashboard'
+import Analytics from './pages/Analytics'
 import LeadsList from './pages/Leads/LeadsList'
 import Products from './pages/Products'
-import ProductCategories from './pages/ProductCategories'
 import ProductBrands from './pages/ProductBrands'
 import Banners from './pages/Banners'
 import News from './pages/News'
@@ -45,11 +45,14 @@ function App() {
           <Route path="/" element={<Layout />}>
             {/* 仪表盘 */}
             <Route index element={<Dashboard />} />
+            {/* 数据看板 */}
+            <Route path="analytics" element={<Analytics />} />
             {/* 线索管理 */}
             <Route path="leads" element={<LeadsList />} />
+            <Route path="leads/:id" element={<LeadsList />} />
             {/* 产品相关 */}
             <Route path="products" element={<Products />} />
-            <Route path="product-categories" element={<ProductCategories />} />
+            <Route path="product-categories" element={<Navigate to="/products?tab=categories" replace />} />
             <Route path="product-brands" element={<ProductBrands />} />
             {/* 内容管理 */}
             <Route path="banners" element={<Banners />} />
