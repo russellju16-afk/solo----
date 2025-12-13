@@ -12,6 +12,7 @@ import {
   Typography,
 } from 'antd';
 import { ChannelType, CategoryInterest, MonthlyVolumeSegment, LeadPayload } from '@/types/lead';
+import { AxiosError } from 'axios';
 import { submitLead } from '@/services/leads';
 import RegionCascader from '@/components/common/RegionCascader';
 
@@ -76,10 +77,13 @@ export const LeadForm: React.FC<LeadFormProps> = ({
 
   // 表单提交处理
   const onSubmit = async (values: LeadFormValues) => {
-    const extractErrorMessage = (error: any) => {
-      const backendMsg = error?.response?.data?.message;
+    const extractErrorMessage = (error: unknown) => {
+      const axiosError = error as AxiosError<{ message?: string | string[] } | undefined>;
+      const backendMsg = axiosError.response?.data?.message;
       if (Array.isArray(backendMsg)) return backendMsg.join('; ');
-      return backendMsg || error?.message || '提交失败，请稍后重试';
+      if (typeof backendMsg === 'string') return backendMsg;
+      if (axiosError.message) return axiosError.message;
+      return '提交失败，请稍后重试';
     };
 
     try {
@@ -90,7 +94,8 @@ export const LeadForm: React.FC<LeadFormProps> = ({
       // 可选：滚动到合适位置
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-      console.error('[LeadForm] submit error', (e as any)?.response?.data || e);
+      const axiosError = e as AxiosError;
+      console.error('[LeadForm] submit error', axiosError?.response?.data || axiosError);
       message.error(extractErrorMessage(e));
     }
   };

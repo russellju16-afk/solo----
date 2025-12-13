@@ -1,23 +1,23 @@
 import http from './http';
-import { Banner, CaseItem, NewsItem, Solution } from '@/types/content';
+import { Banner, CaseItem, NewsItem, Solution, FaqItem } from '@/types/content';
 import { PaginatedResult } from '@/types/product';
 
 export async function fetchBanners(params?: Record<string, unknown>): Promise<Banner[]> {
-  const resp = await http.get('/api/banners', { params });
-  return resp.data as Banner[];
+  return http.get<Banner[]>('/api/banners', { params });
 }
 
 export async function fetchCases(params: Record<string, unknown> = {}): Promise<PaginatedResult<CaseItem>> {
-  const resp = await http.get('/api/cases', { params });
-  return resp.data as PaginatedResult<CaseItem>;
+  return http.get<PaginatedResult<CaseItem>>('/api/cases', { params });
 }
 
 export async function fetchSolutions(params: Record<string, unknown> = {}): Promise<PaginatedResult<Solution>> {
-  const resp = await http.get('/api/solutions', { params });
-  return resp.data as PaginatedResult<Solution>;
+  return http.get<PaginatedResult<Solution>>('/api/solutions', { params });
 }
 
 export async function fetchNews(params: Record<string, unknown> = {}): Promise<PaginatedResult<NewsItem>> {
-  const resp = await http.get('/api/news', { params });
-  return resp.data as PaginatedResult<NewsItem>;
+  return http.get<PaginatedResult<NewsItem>>('/api/news', { params });
+}
+
+export async function fetchFaqs(params: Record<string, unknown> = {}, options: { signal?: AbortSignal } = {}): Promise<FaqItem[]> {
+  return http.get<FaqItem[]>('/api/faqs', { params, signal: options.signal });
 }

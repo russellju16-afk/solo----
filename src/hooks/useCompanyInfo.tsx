@@ -41,6 +41,7 @@ export const CompanyInfoProvider: React.FC<{ children: React.ReactNode }> = ({ c
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCompanyInfo = () => {
   const ctx = React.useContext(CompanyInfoContext)
   if (!ctx) {

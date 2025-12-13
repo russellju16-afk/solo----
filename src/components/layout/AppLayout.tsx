@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react'
 import Header from './Header'
 import Footer from './Footer'
 import { CompanyInfoProvider } from '@/hooks/useCompanyInfo'
+import ContactWidget from '../ContactWidget'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -15,6 +16,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <main className="bg-white">
           {children}
         </main>
+        <ContactWidget />
         <Footer />
       </div>
     </CompanyInfoProvider>

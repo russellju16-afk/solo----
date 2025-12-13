@@ -41,3 +41,11 @@ export interface Solution {
   sort_order: number;
   enabled: number;
 }
+
+export interface FaqItem {
+  id: number;
+  question: string;
+  answer: string;
+  category_id?: number;
+  tags?: string[];
+}
