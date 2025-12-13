@@ -1,18 +1,62 @@
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
-import { PhoneOutlined, MailOutlined, EnvironmentOutlined, ClockCircleOutlined, WechatOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { PhoneOutlined, MailOutlined, EnvironmentOutlined, ClockCircleOutlined, WechatOutlined, CopyOutlined } from '@ant-design/icons'
+import { Button, message, Space, Card, Typography } from 'antd'
 import { LeadForm } from '@/components/forms/LeadForm'
 import { useCompanyInfo } from '@/hooks/useCompanyInfo'
+import { fetchFaqs } from '@/services/content'
+import { FaqItem } from '@/types/content'
+
+const { Title, Paragraph } = Typography
 
 const Contact: React.FC = () => {
   const { companyInfo } = useCompanyInfo()
+  const formRef = React.useRef<HTMLDivElement | null>(null)
+  const [faqs, setFaqs] = React.useState<FaqItem[]>([])
   const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司'
   const companyAddress = companyInfo?.address || '西安市未央区粮油批发市场A区12号'
   const companyPhone = companyInfo?.phone || '029-86543210'
   const companyEmail = companyInfo?.email || 'info@chaoqun粮油.com'
   const businessHours = companyInfo?.business_hours || '周一至周五：8:00-18:00'
   const wechatQr = companyInfo?.wechat_qr_code
+
+  React.useEffect(() => {
+    const controller = new AbortController()
+    const loadFaqs = async () => {
+      try {
+        const result = await fetchFaqs({ pageSize: 4 }, { signal: controller.signal })
+        setFaqs(result.slice(0, 4))
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.warn('load faqs failed', error)
+        }
+      }
+    }
+    loadFaqs()
+    return () => controller.abort()
+  }, [])
+
+  const handleConsult = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      message.success('联系方式已复制')
+    } catch (err) {
+      console.error('Copy failed', err)
+      message.error('复制失败，请稍后重试')
+    }
+  }
+
+  const handleWechatJump = () => {
+    if (wechatQr) {
+      window.open(wechatQr, '_blank', 'noopener')
+      return
+    }
+    message.info('暂未提供微信二维码')
+  }
   return (
     <div className="py-12">
       <Helmet>
@@ -49,13 +93,21 @@ const Contact: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-medium mb-1">联系电话</h3>
                   <p className="text-gray-600 mb-2">{companyPhone}</p>
-                  <Button 
-                    type="primary" 
-                    className="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition-all duration-300"
-                    onClick={() => window.location.href = `tel:${companyPhone}`}
-                  >
-                    一键拨打电话
-                  </Button>
+                  <Space size="middle" wrap>
+                    <Button
+                      type="primary"
+                      className="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md transition-all duration-300"
+                      onClick={() => window.location.href = `tel:${companyPhone}`}
+                    >
+                      一键拨打电话
+                    </Button>
+                    <Button icon={<CopyOutlined />} onClick={() => handleCopy(companyPhone)}>
+                      复制号码
+                    </Button>
+                    <Button icon={<WechatOutlined />} onClick={handleWechatJump}>
+                      微信联系
+                    </Button>
+                  </Space>
                 </div>
               </div>
               
@@ -95,11 +147,41 @@ const Contact: React.FC = () => {
           </div>
 
           {/* 右侧联系表单 */}
-          <div className="bg-white rounded-lg shadow-md p-8">
+          <div ref={formRef} className="bg-white rounded-lg shadow-md p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">立即咨询</h2>
+              <Button type="link" onClick={handleConsult}>返回顶部</Button>
+            </div>
             <LeadForm
               source="contact_page"
             />
           </div>
+        </div>
+
+        {faqs.length > 0 && (
+          <div className="mt-10">
+            <Card title="常见问题与指南">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {faqs.map((item) => (
+                  <div key={item.id} className="p-3 rounded-md bg-gray-50">
+                    <Title level={5}>{item.question}</Title>
+                    <Paragraph className="mb-0 text-gray-700">{item.answer}</Paragraph>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        <div className="text-center mt-10">
+          <Space size="large" wrap>
+            <Button type="primary" size="large" onClick={() => window.location.href = `tel:${companyPhone}`}>
+              立即拨打
+            </Button>
+            <Button size="large" onClick={() => handleCopy(companyPhone)} icon={<CopyOutlined />}>复制电话</Button>
+            <Button size="large" icon={<WechatOutlined />} onClick={handleWechatJump}>微信咨询</Button>
+            <Button size="large" type="dashed" onClick={handleConsult}>填写咨询表单</Button>
+          </Space>
         </div>
       </div>
     </div>

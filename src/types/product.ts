@@ -20,6 +20,7 @@ export interface ProductBrand {
 export interface Product {
   id: number;
   name: string;
+  price?: number;
   spec_weight?: string;
   package_type?: string;
   applicable_scenes?: string[];
@@ -27,6 +28,8 @@ export interface Product {
   supply_area?: string;
   description?: string;
   status?: number;
+  specifications?: Record<string, string>;
+  features?: string[];
   latest_price_note?: string;
   latest_price_updated_at?: string;
   price_trend?: string;
