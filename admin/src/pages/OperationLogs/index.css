@@ -1,0 +1,63 @@
+.operation-logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.operation-logs-header-title {
+  margin: 0 !important;
+}
+
+.operation-logs-header-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+}
+
+.operation-logs-filters {
+  margin-bottom: 16px;
+  padding: 16px 16px 6px;
+  background: #f5f7fb;
+  border: 1px solid #edf0f7;
+  border-radius: 12px;
+}
+
+.operation-logs-filters .ant-form-item {
+  margin-bottom: 10px;
+}
+
+.operation-logs-table .ant-table-thead > tr > th {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.operation-logs-table .ant-table-container {
+  border: 1px solid #edf0f7;
+  border-radius: 12px;
+}
+
+.operation-logs-empty {
+  padding: 8px 0;
+}
+
+.operation-logs-empty-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.operation-logs-empty-example {
+  display: block;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(30, 64, 175, 0.06);
+  border: 1px dashed rgba(30, 64, 175, 0.22);
+  color: #0f172a;
+  font-size: 12px;
+}
+
