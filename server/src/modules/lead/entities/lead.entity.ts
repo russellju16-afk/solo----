@@ -8,6 +8,63 @@ export class Lead {
   id: number;
 
   @Column({
+    name: 'lead_type',
+    type: 'varchar',
+    length: 20,
+    default: 'form',
+  })
+  leadType: 'form' | 'signal';
+
+  @Column({
+    name: 'channel',
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+  })
+  channel: 'phone' | 'wechat' | 'email' | 'unknown' | null;
+
+  @Column({
+    name: 'session_id',
+    type: 'varchar',
+    length: 80,
+    nullable: true,
+  })
+  sessionId: string | null;
+
+  @Column({
+    name: 'page_path',
+    type: 'text',
+    nullable: true,
+  })
+  pagePath: string | null;
+
+  @Column({
+    type: 'simple-json',
+    nullable: true,
+  })
+  meta: any | null;
+
+  @Column({
+    name: 'is_contactable',
+    type: 'boolean',
+    default: true,
+  })
+  isContactable: boolean;
+
+  @Column({
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
+  ip: string | null;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  ua: string | null;
+
+  @Column({
     type: 'varchar',
     length: 50,
   })

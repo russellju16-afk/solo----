@@ -15,6 +15,8 @@ export const leadService = {
   getLeads: (params: LeadQueryParams) => {
     const {
       channelType,
+      leadType,
+      channel,
       ownerId,
       dateFrom,
       dateTo,
@@ -25,6 +27,8 @@ export const leadService = {
       params: {
         ...rest,
         channel_type: channelType,
+        lead_type: leadType,
+        channel,
         owner_id: ownerId,
         date_from: dateFrom,
         date_to: dateTo,
@@ -55,6 +59,8 @@ export const leadService = {
   exportLeads: (params: LeadQueryParams) => {
     const {
       channelType,
+      leadType,
+      channel,
       ownerId,
       dateFrom,
       dateTo,
@@ -64,6 +70,8 @@ export const leadService = {
       params: {
         ...rest,
         channel_type: channelType,
+        lead_type: leadType,
+        channel,
         owner_id: ownerId,
         date_from: dateFrom,
         date_to: dateTo,

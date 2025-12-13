@@ -15,6 +15,7 @@ import { ChannelType, CategoryInterest, MonthlyVolumeSegment, LeadPayload } from
 import { AxiosError } from 'axios';
 import { submitLead } from '@/services/leads';
 import RegionCascader from '@/components/common/RegionCascader';
+import { track } from '@/utils/track';
 
 const { Title } = Typography;
 
@@ -89,6 +90,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
     try {
       await submitLead(mapFormValuesToPayload(values));
       message.success('提交成功，我们会尽快联系您');
+      track('lead_submit', { source, productId: defaultProductId, channelType: values.channelType });
       reset();
       onSubmitted?.();
       // 可选：滚动到合适位置

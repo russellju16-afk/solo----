@@ -6,6 +6,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { fetchProducts } from '@/services/products';
 import { Product } from '@/types/product';
+import { track } from '@/utils/track';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -96,6 +97,7 @@ const ProductsList: React.FC = () => {
   const handleApplyPreset = (name: string) => {
     const preset = filterPresets.find((item) => item.name === name);
     if (!preset) return;
+    track('product_filter', { presetName: preset.name, categoryId: preset.categoryId, keyword: preset.keyword });
     setCategoryId(preset.categoryId);
     setKeyword(preset.keyword);
     setPage(1);
@@ -113,15 +115,14 @@ const ProductsList: React.FC = () => {
   };
 
   const toggleSelectProduct = (productId: number) => {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) {
-        next.delete(productId);
-      } else {
-        next.add(productId);
-      }
-      return next;
-    });
+    const next = new Set(selectedProductIds);
+    if (next.has(productId)) {
+      next.delete(productId);
+    } else {
+      next.add(productId);
+      track('product_compare_add', { productId });
+    }
+    setSelectedProductIds(next);
   };
 
   const selectedProducts = useMemo(
@@ -151,11 +152,14 @@ const ProductsList: React.FC = () => {
   }, [loadProducts]);
 
   const handleSearch = (value: string) => {
-    setKeyword(value.trim());
+    const nextKeyword = value.trim();
+    track('product_search', { keyword: nextKeyword, categoryId });
+    setKeyword(nextKeyword);
     setPage(1);
   };
 
   const handleCategoryChange = (value: number | undefined) => {
+    track('product_filter', { categoryId: value, keyword: keyword.trim() || undefined });
     setCategoryId(value);
     setPage(1);
   };
@@ -234,7 +238,10 @@ const ProductsList: React.FC = () => {
               <Button
                 type="primary"
                 disabled={selectedProductIds.size < 2}
-                onClick={() => setIsCompareOpen(true)}
+                onClick={() => {
+                  track('product_compare_open', { count: selectedProductIds.size });
+                  setIsCompareOpen(true);
+                }}
               >
                 打开对比抽屉
               </Button>

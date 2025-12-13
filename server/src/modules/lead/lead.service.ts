@@ -1,11 +1,20 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Injectable, Logger, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Request } from 'express';
 import { Lead } from './entities/lead.entity';
 import { UserService } from '../user/user.service';
 import { FeishuService } from '../feishu/feishu.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { QuickSignalLeadDto } from './dto/quick-signal-lead.dto';
 import { LeadItemDto, LeadListResponseDto } from './dto/lead-list-response.dto';
+import { AnalyticsService } from '../analytics/analytics.service';
+
+const SIGNAL_DEDUP_WINDOW_MS = 30 * 60 * 1000;
+const SIGNAL_RATE_WINDOW_MS = 60 * 1000;
+const SIGNAL_RATE_LIMIT = 20;
+const ipCreateHistory = new Map<string, number[]>();
 
 @Injectable()
 export class LeadService {
@@ -15,7 +24,27 @@ export class LeadService {
     @InjectRepository(Lead) private leadRepository: Repository<Lead>,
     private userService: UserService,
     private feishuService: FeishuService,
+    private analyticsService: AnalyticsService,
   ) {}
+
+  private readIp(req: Request): string | null {
+    const xff = req.headers['x-forwarded-for'];
+    if (typeof xff === 'string' && xff.trim()) return xff.split(',')[0].trim();
+    if (Array.isArray(xff) && xff.length > 0) return String(xff[0]).split(',')[0].trim();
+    const direct = (req.ip || (req.socket as any)?.remoteAddress) as string | undefined;
+    return direct || null;
+  }
+
+  private hitRateLimit(ip: string) {
+    const now = Date.now();
+    const existing = ipCreateHistory.get(ip) || [];
+    const next = existing.filter((ts) => now - ts < SIGNAL_RATE_WINDOW_MS);
+    if (next.length >= SIGNAL_RATE_LIMIT) {
+      throw new HttpException('rate_limit', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    next.push(now);
+    ipCreateHistory.set(ip, next);
+  }
 
   // 构建查询条件
   private buildQueryBuilder(query: any) {
@@ -36,10 +65,22 @@ export class LeadService {
       qb.andWhere('lead.status = :status', { status: query.status });
     }
 
+    // 按线索类型筛选（form/signal）
+    const leadType = query.lead_type ?? query.leadType;
+    if (leadType) {
+      qb.andWhere('lead.lead_type = :leadType', { leadType });
+    }
+
     // 按渠道类型筛选
     const channelType = query.channel_type ?? query.channelType;
     if (channelType) {
       qb.andWhere('lead.channel_type = :channelType', { channelType });
+    }
+
+    // 按触达渠道筛选（phone/wechat/email）
+    const channel = query.channel;
+    if (channel) {
+      qb.andWhere('lead.channel = :channel', { channel });
     }
 
     // 按负责人筛选
@@ -76,6 +117,11 @@ export class LeadService {
       .leftJoin('lead.owner', 'owner')
       .select([
         'lead.id',
+        'lead.lead_type',
+        'lead.channel',
+        'lead.session_id',
+        'lead.page_path',
+        'lead.is_contactable',
         'lead.name',
         'lead.company_name',
         'lead.phone',
@@ -107,6 +153,11 @@ export class LeadService {
 
     const items: LeadItemDto[] = rows.map((row: any) => ({
       id: row.lead_id,
+      leadType: row.lead_leadType ?? row.lead_lead_type,
+      channel: row.lead_channel,
+      sessionId: row.lead_sessionId ?? row.lead_session_id,
+      pagePath: row.lead_pagePath ?? row.lead_page_path,
+      isContactable: row.lead_isContactable ?? row.lead_is_contactable,
       name: row.lead_name,
       companyName: row.lead_companyName ?? row.lead_company_name,
       phone: row.lead_phone,
@@ -145,6 +196,14 @@ export class LeadService {
     };
     return {
       id: lead.id,
+      leadType: lead.leadType,
+      channel: lead.channel,
+      sessionId: lead.sessionId,
+      pagePath: lead.pagePath,
+      meta: lead.meta,
+      isContactable: lead.isContactable,
+      ip: lead.ip,
+      ua: lead.ua,
       name: lead.name,
       companyName: lead.companyName,
       phone: lead.phone,
@@ -170,8 +229,22 @@ export class LeadService {
     const lead = this.leadRepository.create({
       ...createLeadDto,
       status: 'new',
+      leadType: 'form',
+      isContactable: true,
+      channel: 'unknown',
     });
     const savedLead = await this.leadRepository.save(lead);
+
+    // 埋点：线索提交（后端双保险）
+    try {
+      await this.analyticsService.trackInternal('lead_submit', {
+        source: savedLead.source,
+        productId: savedLead.productId,
+        channelType: savedLead.channelType,
+      });
+    } catch (error) {
+      this.logger.warn(`写入 lead_submit 埋点失败: ${(error as any)?.message || error}`);
+    }
     
     // 发送飞书通知
     try {
@@ -182,6 +255,62 @@ export class LeadService {
     }
     
     return savedLead;
+  }
+
+  // 创建行为线索（无需认证）
+  async createSignalLead(dto: QuickSignalLeadDto, req: Request) {
+    const ua = (req.headers['user-agent'] as string | undefined) || null;
+    const ip = this.readIp(req) || 'unknown';
+    this.hitRateLimit(ip);
+
+    const sessionId = dto.sessionId || null;
+    const pagePath = dto.path || null;
+
+    if (sessionId && pagePath) {
+      const since = new Date(Date.now() - SIGNAL_DEDUP_WINDOW_MS);
+      const existed = await this.leadRepository
+        .createQueryBuilder('lead')
+        .where('lead.lead_type = :leadType', { leadType: 'signal' })
+        .andWhere('lead.session_id = :sessionId', { sessionId })
+        .andWhere('lead.channel = :channel', { channel: dto.channel })
+        .andWhere('lead.page_path = :pagePath', { pagePath })
+        .andWhere('lead.created_at >= :since', { since })
+        .orderBy('lead.created_at', 'DESC')
+        .getOne();
+
+      if (existed) {
+        return { success: true, id: existed.id, dedup: true };
+      }
+    }
+
+    const channelLabelMap: Record<string, string> = {
+      phone: '电话直拨',
+      wechat: '微信',
+      email: '邮箱',
+    };
+    const channelLabel = channelLabelMap[dto.channel] || dto.channel;
+    const placeholder = sessionId ? sessionId.slice(0, 6) : 'unknown';
+    const description = `用户点击了${channelLabel}入口（页面：${pagePath || '-'}）`;
+
+    const lead = this.leadRepository.create({
+      leadType: 'signal',
+      channel: dto.channel,
+      sessionId,
+      pagePath,
+      meta: dto.meta ?? null,
+      isContactable: false,
+      ip: ip === 'unknown' ? null : ip,
+      ua,
+      status: 'new',
+      name: `匿名访客-${placeholder}`,
+      phone: '',
+      companyName: null,
+      source: 'signal',
+      description,
+    });
+
+    const saved = await this.leadRepository.save(lead);
+    return { success: true, id: saved.id, dedup: false };
   }
 
   // 更新线索

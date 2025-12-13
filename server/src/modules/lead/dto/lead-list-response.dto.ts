@@ -1,5 +1,10 @@
 export class LeadItemDto {
   id: number;
+  leadType?: string;
+  channel?: string;
+  sessionId?: string;
+  pagePath?: string;
+  isContactable?: boolean;
   name: string;
   companyName: string;
   phone: string;

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { LeadFollowup } from './entities/lead-followup.entity';
 import { Lead } from './entities/lead.entity';
 import { UserService } from '../user/user.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class LeadFollowupService {
@@ -11,6 +12,7 @@ export class LeadFollowupService {
     @InjectRepository(LeadFollowup) private followupRepository: Repository<LeadFollowup>,
     @InjectRepository(Lead) private leadRepository: Repository<Lead>,
     private userService: UserService,
+    private analyticsService: AnalyticsService,
   ) {}
 
   // 获取线索的所有跟进记录
@@ -53,7 +55,21 @@ export class LeadFollowupService {
       status_after: createFollowupDto.statusAfter || createFollowupDto.status_after,
     });
 
-    return this.followupRepository.save(followup);
+    const saved = await this.followupRepository.save(followup);
+
+    // 埋点：跟进记录（后端双保险）
+    try {
+      await this.analyticsService.trackInternal('lead_followup', {
+        leadId,
+        statusAfter: saved.status_after,
+      });
+    } catch (error) {
+      // 不阻塞主流程
+      // eslint-disable-next-line no-console
+      console.warn('[LeadFollowupService] write lead_followup event failed', (error as any)?.message || error);
+    }
+
+    return saved;
   }
 
   // 根据ID获取跟进记录

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
-import { Card, Col, DatePicker, Progress, Row, Segmented, Space, Statistic, Table, Typography } from 'antd'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Card, Col, DatePicker, Progress, Row, Segmented, Space, Statistic, Table, Typography, message } from 'antd'
 import dayjs, { Dayjs } from 'dayjs'
+import { getAnalyticsOverview } from '../../services/analytics'
 import './index.css'
 
 const { Title, Paragraph, Text } = Typography
@@ -17,7 +18,7 @@ const computePresetRange = (preset: RangePreset): [Dayjs, Dayjs] => {
 }
 
 const Analytics: React.FC = () => {
-  const funnelData = useMemo(
+  const fallbackFunnel = useMemo(
     () => [
       { stage: '产品浏览', value: 1280 },
       { stage: '筛选/搜索', value: 860 },
@@ -28,21 +29,21 @@ const Analytics: React.FC = () => {
     [],
   )
 
-  const channelData = useMemo(
+  const fallbackChannels = useMemo(
     () => [
-      { key: 'tel', channel: '电话直拨', leads: 52, rate: '37%' },
-      { key: 'wechat', channel: '微信', leads: 28, rate: '20%' },
-      { key: 'form', channel: '表单提交', leads: 44, rate: '31%' },
-      { key: 'email', channel: '邮件', leads: 16, rate: '12%' },
+      { channel: '电话直拨', count: 52, rate: 37 },
+      { channel: '微信', count: 28, rate: 20 },
+      { channel: '表单提交', count: 44, rate: 31 },
+      { channel: '邮件', count: 16, rate: 12 },
     ],
     [],
   )
 
-  const topFilters = useMemo(
+  const fallbackTopFilters = useMemo(
     () => [
-      { key: 1, name: '大米 + 25kg', usage: 192 },
-      { key: 2, name: '小麦粉 + 散装', usage: 148 },
-      { key: 3, name: '非转基因 + 食用油', usage: 116 },
+      { name: '大米 + 25kg', usage: 192 },
+      { name: '小麦粉 + 散装', usage: 148 },
+      { name: '非转基因 + 食用油', usage: 116 },
     ],
     [],
   )
@@ -50,6 +51,9 @@ const Analytics: React.FC = () => {
   const [rangePreset, setRangePreset] = useState<RangePreset>('7d')
   const [customRange, setCustomRange] = useState<[Dayjs | null, Dayjs | null]>([null, null])
   const [lastUpdated, setLastUpdated] = useState(() => dayjs().format('YYYY-MM-DD HH:mm'))
+  const [loading, setLoading] = useState(false)
+  const [overview, setOverview] = useState<any | null>(null)
+  const warnedRef = useRef(false)
 
   const rangeValue = useMemo<[Dayjs, Dayjs]>(() => {
     if (rangePreset !== 'custom') return computePresetRange(rangePreset)
@@ -61,6 +65,11 @@ const Analytics: React.FC = () => {
   const rangeText = useMemo(() => {
     const [from, to] = rangeValue
     return `${from.format('YYYY-MM-DD')} ~ ${to.format('YYYY-MM-DD')}`
+  }, [rangeValue])
+
+  const rangeQuery = useMemo(() => {
+    const [from, to] = rangeValue
+    return { startAt: from.format('YYYY-MM-DD'), endAt: to.format('YYYY-MM-DD') }
   }, [rangeValue])
 
   const handlePresetChange = (value: string | number) => {
@@ -77,6 +86,56 @@ const Analytics: React.FC = () => {
     setLastUpdated(dayjs().format('YYYY-MM-DD HH:mm'))
   }
 
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchOverview = async () => {
+      setLoading(true)
+      try {
+        const res: any = await getAnalyticsOverview(rangeQuery)
+        if (cancelled) return
+        setOverview(res)
+        setLastUpdated(dayjs(res?.updatedAt || new Date()).format('YYYY-MM-DD HH:mm'))
+      } catch (err) {
+        if (cancelled) return
+        setOverview(null)
+        setLastUpdated(dayjs().format('YYYY-MM-DD HH:mm'))
+        if (!warnedRef.current) {
+          warnedRef.current = true
+          message.warning('数据看板加载失败，已展示演示数据')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchOverview()
+    return () => {
+      cancelled = true
+    }
+  }, [rangeQuery])
+
+  const kpis = overview?.kpis || {
+    views: 1280,
+    searches: 860,
+    compares: 320,
+    quoteLeads: 140,
+    signalClicks: 96,
+    quoteConversionRate: 10.9,
+  }
+
+  const funnel = useMemo(() => {
+    if (Array.isArray(overview?.funnel) && overview.funnel.length > 0) return overview.funnel
+    const base = fallbackFunnel[0]?.value || 0
+    return fallbackFunnel.map((item, index) => ({
+      ...item,
+      percent: index === 0 ? (base > 0 ? 100 : 0) : base > 0 ? Math.round((item.value / base) * 100) : 0,
+    }))
+  }, [fallbackFunnel, overview])
+
+  const channels = Array.isArray(overview?.channels) && overview.channels.length > 0 ? overview.channels : fallbackChannels
+  const topFilters = Array.isArray(overview?.topFilters) && overview.topFilters.length > 0 ? overview.topFilters : fallbackTopFilters
+
   return (
     <div className="analytics-page">
       <div className="analytics-header">
@@ -85,7 +144,7 @@ const Analytics: React.FC = () => {
             数据看板
           </Title>
           <Paragraph className="analytics-subtitle">
-            用于分析官网访问与线索转化（当前为演示数据，后续接入埋点/接口）
+            用于分析官网访问与线索转化（已接入埋点/接口，异常时展示演示数据）
           </Paragraph>
           <Text type="secondary" className="analytics-metric-note">
             口径：浏览=PV，筛选=筛选动作次数，对比=加入对比次数，询价转化率=提交询价/浏览
@@ -118,6 +177,7 @@ const Analytics: React.FC = () => {
             <div className="analytics-meta">
               <Text type="secondary">统计范围：{rangeText}</Text>
               <Text type="secondary">最后更新时间：{lastUpdated}</Text>
+              <Text type="secondary">强意向行为数：{typeof kpis.signalClicks === 'number' ? kpis.signalClicks : '--'}</Text>
             </div>
           </Space>
         </div>
@@ -125,23 +185,23 @@ const Analytics: React.FC = () => {
 
       <Row gutter={[16, 16]} className="analytics-kpi-row">
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false}>
-            <Statistic title="浏览（PV）" value={1280} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
+          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+            <Statistic title="浏览（PV）" value={kpis.views} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false}>
-            <Statistic title="筛选动作" value={860} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
+          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+            <Statistic title="筛选/搜索" value={kpis.searches} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false}>
-            <Statistic title="对比次数" value={320} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
+          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+            <Statistic title="对比次数" value={kpis.compares} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false}>
-            <Statistic title="询价转化率" value={10.9} suffix="%" precision={1} valueStyle={{ fontSize: 28, fontWeight: 700 }} />
+          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+            <Statistic title="询价转化率" value={kpis.quoteConversionRate} suffix="%" precision={2} valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
       </Row>
@@ -149,11 +209,10 @@ const Analytics: React.FC = () => {
       <div className="analytics-sections">
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title="漏斗表现" bordered={false}>
+            <Card title="漏斗表现" bordered={false} loading={loading}>
               <div className="analytics-funnel-list">
-                {funnelData.map((item, index) => {
-                  const percent =
-                    index === 0 ? 100 : Math.round((item.value / funnelData[0].value) * 100)
+                {funnel.map((item: any) => {
+                  const percent = Number.isFinite(item.percent) ? item.percent : 0
                   return (
                     <div key={item.stage} className="analytics-funnel-item">
                       <div className="analytics-funnel-meta">
@@ -175,13 +234,20 @@ const Analytics: React.FC = () => {
               <Table
                 columns={[
                   { title: '渠道', dataIndex: 'channel', key: 'channel' },
-                  { title: '线索数', dataIndex: 'leads', key: 'leads', width: 120 },
-                  { title: '占比', dataIndex: 'rate', key: 'rate', width: 120 },
+                  { title: '数量', dataIndex: 'count', key: 'count', width: 120 },
+                  {
+                    title: '占比',
+                    dataIndex: 'rate',
+                    key: 'rate',
+                    width: 120,
+                    render: (value: number) => `${Number.isFinite(value) ? value : 0}%`,
+                  },
                 ]}
-                dataSource={channelData}
+                dataSource={channels}
                 pagination={false}
                 size="small"
-                rowKey="key"
+                rowKey="channel"
+                loading={loading}
               />
             </Card>
           </Col>
@@ -198,13 +264,14 @@ const Analytics: React.FC = () => {
                 dataSource={topFilters}
                 pagination={false}
                 size="small"
-                rowKey="key"
+                rowKey="name"
+                loading={loading}
               />
             </Card>
           </Col>
 
           <Col xs={24} lg={12}>
-            <Card title="渠道服务水平" bordered={false}>
+            <Card title="渠道服务水平" bordered={false} loading={loading}>
               <div className="analytics-service-list">
                 <div className="analytics-service-item">
                   <div className="analytics-service-meta">
@@ -237,4 +304,3 @@ const Analytics: React.FC = () => {
 }
 
 export default Analytics
-

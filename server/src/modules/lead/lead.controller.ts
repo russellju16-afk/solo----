@@ -3,6 +3,7 @@ import { LeadService } from './lead.service';
 import { LeadFollowupService } from './lead-followup.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateLeadDto } from './dto/create-lead.dto';
+import { QuickSignalLeadDto } from './dto/quick-signal-lead.dto';
 import { Response } from 'express';
 import { LeadListResponseDto } from './dto/lead-list-response.dto';
 
@@ -19,6 +20,12 @@ export class LeadController {
   async create(@Body() createLeadDto: CreateLeadDto) {
     const lead = await this.leadService.create(createLeadDto);
     return { success: true, id: lead.id };
+  }
+
+  // 前台接口：快速行为线索（无需认证）
+  @Post('leads/signal')
+  async createSignalLead(@Body() dto: QuickSignalLeadDto, @Req() req) {
+    return this.leadService.createSignalLead(dto, req);
   }
 
   // 后台接口：获取线索列表（需要认证）

@@ -213,12 +213,36 @@ const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
           {/* 基础信息 */}
           <Descriptions title="基础信息" bordered column={2} style={{ marginBottom: 16 }}>
             <Descriptions.Item label="创建时间">{formatDate(lead.createdAt)}</Descriptions.Item>
-            <Descriptions.Item label="渠道类型">{CHANNEL_LABEL_MAP[lead.channelType]}</Descriptions.Item>
+            <Descriptions.Item label="线索类型">
+              {lead.leadType === 'signal' ? (
+                <Space size={6}>
+                  <Tag color="blue">行为线索</Tag>
+                  {lead.isContactable ? null : <Tag color="orange">待补全</Tag>}
+                </Space>
+              ) : (
+                <Tag color="green">表单线索</Tag>
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="采购角色">{lead.channelType ? CHANNEL_LABEL_MAP[lead.channelType] : '-'}</Descriptions.Item>
+            <Descriptions.Item label="触达渠道">
+              {lead.leadType === 'signal'
+                ? lead.channel === 'phone'
+                  ? '电话'
+                  : lead.channel === 'wechat'
+                    ? '微信'
+                    : lead.channel === 'email'
+                      ? '邮件'
+                      : '未知'
+                : '-'}
+            </Descriptions.Item>
             <Descriptions.Item label="姓名">{lead.name}</Descriptions.Item>
             <Descriptions.Item label="公司名称">{lead.companyName || '-'}</Descriptions.Item>
-            <Descriptions.Item label="手机号">{lead.phone}</Descriptions.Item>
+            <Descriptions.Item label="手机号">{lead.phone || '-'}</Descriptions.Item>
             <Descriptions.Item label="城市">{lead.city || '-'}</Descriptions.Item>
-            <Descriptions.Item label="来源">{lead.source}</Descriptions.Item>
+            <Descriptions.Item label="是否可联系">
+              <Tag color={lead.isContactable ? 'green' : 'default'}>{lead.isContactable ? '可联系' : '待补全'}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="来源">{lead.source || '-'}</Descriptions.Item>
             <Descriptions.Item label="负责人">{lead.ownerName || '-'}</Descriptions.Item>
           </Descriptions>
           

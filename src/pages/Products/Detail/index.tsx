@@ -10,6 +10,7 @@ import { message } from 'antd';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 import { fetchFaqs } from '@/services/content';
 import { FaqItem } from '@/types/content';
+import { track } from '@/utils/track';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -23,6 +24,7 @@ const ProductDetail: React.FC = () => {
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const { companyInfo } = useCompanyInfo();
   const formRef = useRef<HTMLDivElement | null>(null);
+  const trackedProductRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!productId) {
@@ -60,6 +62,10 @@ const ProductDetail: React.FC = () => {
 
   useEffect(() => {
     if (!product) return;
+    if (trackedProductRef.current !== product.id) {
+      trackedProductRef.current = product.id;
+      track('product_view', { productId: product.id, categoryId: product.category?.id });
+    }
     const controller = new AbortController();
 
     const loadRecommendations = async () => {

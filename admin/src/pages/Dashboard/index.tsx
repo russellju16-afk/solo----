@@ -35,6 +35,10 @@ const Dashboard: React.FC = () => {
   const [statsLoading, setStatsLoading] = React.useState(false)
   const [todayLeads, setTodayLeads] = React.useState<number | null>(null)
   const [monthLeads, setMonthLeads] = React.useState<number | null>(null)
+  const [todayFormLeads, setTodayFormLeads] = React.useState<number | null>(null)
+  const [todaySignalLeads, setTodaySignalLeads] = React.useState<number | null>(null)
+  const [monthFormLeads, setMonthFormLeads] = React.useState<number | null>(null)
+  const [monthSignalLeads, setMonthSignalLeads] = React.useState<number | null>(null)
   const [productTotal, setProductTotal] = React.useState<number | null>(null)
   const [news7dTotal, setNews7dTotal] = React.useState<number | null>(null)
 
@@ -52,6 +56,12 @@ const Dashboard: React.FC = () => {
         suffix: '条',
         icon: <FieldTimeOutlined />,
         onView: () => navigate('/leads'),
+        footer:
+          statsLoading
+            ? '数据加载中…'
+            : typeof todayFormLeads === 'number' && typeof todaySignalLeads === 'number'
+              ? `表单 ${todayFormLeads} / 行为 ${todaySignalLeads}`
+              : '数据来自后台接口统计',
       },
       {
         key: 'monthLeads',
@@ -60,6 +70,12 @@ const Dashboard: React.FC = () => {
         suffix: '条',
         icon: <BarChartOutlined />,
         onView: () => navigate('/leads'),
+        footer:
+          statsLoading
+            ? '数据加载中…'
+            : typeof monthFormLeads === 'number' && typeof monthSignalLeads === 'number'
+              ? `表单 ${monthFormLeads} / 行为 ${monthSignalLeads}`
+              : '数据来自后台接口统计',
       },
       {
         key: 'products',
@@ -68,6 +84,7 @@ const Dashboard: React.FC = () => {
         suffix: '个',
         icon: <AppstoreAddOutlined />,
         onView: () => navigate('/products'),
+        footer: statsLoading ? '数据加载中…' : '数据来自后台接口统计',
       },
       {
         key: 'news',
@@ -76,9 +93,10 @@ const Dashboard: React.FC = () => {
         suffix: '篇',
         icon: <ReadOutlined />,
         onView: () => navigate('/news'),
+        footer: statsLoading ? '数据加载中…' : '数据来自后台接口统计',
       },
     ],
-    [monthLeads, navigate, news7dTotal, productTotal, todayLeads],
+    [monthFormLeads, monthLeads, monthSignalLeads, navigate, news7dTotal, productTotal, statsLoading, todayFormLeads, todayLeads, todaySignalLeads],
   )
 
   React.useEffect(() => {
@@ -92,28 +110,45 @@ const Dashboard: React.FC = () => {
       const newsFrom = dayjs().subtract(6, 'day').format('YYYY-MM-DD')
 
       const results = await Promise.allSettled([
-        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: today, dateTo: today }),
-        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: monthStart, dateTo: today }),
+        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: today, dateTo: today, leadType: 'form' }),
+        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: today, dateTo: today, leadType: 'signal' }),
+        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: monthStart, dateTo: today, leadType: 'form' }),
+        leadService.getLeads({ page: 1, pageSize: 1, dateFrom: monthStart, dateTo: today, leadType: 'signal' }),
         productService.getProducts({ page: 1, pageSize: 1 }),
         newsService.getNews({ page: 1, pageSize: 1, date_from: newsFrom, date_to: today }),
       ])
 
       if (cancelled) return
 
-      const [todayRes, monthRes, productsRes, newsRes] = results
+      const [todayFormRes, todaySignalRes, monthFormRes, monthSignalRes, productsRes, newsRes] = results
 
       let hasFailure = false
 
-      if (todayRes.status === 'fulfilled') setTodayLeads(todayRes.value?.total ?? null)
-      else {
+      const todayForm = todayFormRes.status === 'fulfilled' ? (todayFormRes.value?.total ?? 0) : null
+      const todaySignal = todaySignalRes.status === 'fulfilled' ? (todaySignalRes.value?.total ?? 0) : null
+      const monthForm = monthFormRes.status === 'fulfilled' ? (monthFormRes.value?.total ?? 0) : null
+      const monthSignal = monthSignalRes.status === 'fulfilled' ? (monthSignalRes.value?.total ?? 0) : null
+
+      if (todayForm === null || todaySignal === null) {
         hasFailure = true
+        setTodayFormLeads(todayForm)
+        setTodaySignalLeads(todaySignal)
         setTodayLeads(null)
+      } else {
+        setTodayFormLeads(todayForm)
+        setTodaySignalLeads(todaySignal)
+        setTodayLeads(todayForm + todaySignal)
       }
 
-      if (monthRes.status === 'fulfilled') setMonthLeads(monthRes.value?.total ?? null)
-      else {
+      if (monthForm === null || monthSignal === null) {
         hasFailure = true
+        setMonthFormLeads(monthForm)
+        setMonthSignalLeads(monthSignal)
         setMonthLeads(null)
+      } else {
+        setMonthFormLeads(monthForm)
+        setMonthSignalLeads(monthSignal)
+        setMonthLeads(monthForm + monthSignal)
       }
 
       if (productsRes.status === 'fulfilled') setProductTotal((productsRes.value as any)?.total ?? null)
@@ -206,7 +241,7 @@ const Dashboard: React.FC = () => {
                 suffix={stat.suffix}
                 valueStyle={{ fontSize: 30, fontWeight: 700 }}
               />
-              <div className="stat-footer">{statsLoading ? '数据加载中…' : '数据来自后台接口统计'}</div>
+              <div className="stat-footer">{stat.footer}</div>
             </Card>
           </Col>
         ))}
@@ -260,10 +295,17 @@ const Dashboard: React.FC = () => {
                     },
                     {
                       title: '渠道',
-                      dataIndex: 'channelType',
-                      key: 'channelType',
+                      key: 'channel',
                       width: 110,
-                      render: (value: any) => CHANNEL_LABEL_MAP[value] || value,
+                      render: (_: any, record: LeadListItem) => {
+                        if (record.leadType === 'signal') {
+                          if (record.channel === 'phone') return '电话'
+                          if (record.channel === 'wechat') return '微信'
+                          if (record.channel === 'email') return '邮件'
+                          return '行为'
+                        }
+                        return record.channelType ? CHANNEL_LABEL_MAP[record.channelType] : '-'
+                      },
                     },
                     {
                       title: '状态',

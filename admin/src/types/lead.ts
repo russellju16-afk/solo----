@@ -9,6 +9,12 @@ export type ChannelType =
   | 'online_platform'
   | 'other';
 
+// 线索类型
+export type LeadType = 'form' | 'signal';
+
+// 行为触达渠道
+export type SignalChannel = 'phone' | 'wechat' | 'email' | 'unknown';
+
 // 意向品类
 export type CategoryInterest = 'rice' | 'flour' | 'oil' | 'other';
 
@@ -24,13 +30,21 @@ export type LeadStatus = 'new' | 'processing' | 'won' | 'lost';
 // 线索列表项
 export interface LeadListItem {
   id: number;
+  leadType?: LeadType;
+  channel?: SignalChannel | null;
+  sessionId?: string | null;
+  pagePath?: string | null;
+  isContactable?: boolean;
   name: string;
   companyName: string;
   phone: string;
   city?: string;
-  channelType: ChannelType;
+  channelType?: ChannelType;
   interestedCategories?: CategoryInterest[];
   monthlyVolumeSegment?: MonthlyVolumeSegment;
+  brandRequirement?: string;
+  description?: string;
+  productId?: string;
   status: LeadStatus;
   ownerName?: string;       // 负责人姓名（后端可拼好）
   source: string;
@@ -60,6 +74,8 @@ export interface LeadQueryParams {
   pageSize?: number;
   status?: LeadStatus | 'all';
   channelType?: ChannelType | 'all';
+  leadType?: LeadType | 'all';
+  channel?: SignalChannel | 'all';
   ownerId?: number;
   keyword?: string;      // 姓名/公司/手机号模糊搜索
   dateFrom?: string;     // ISO 日期字符串
@@ -78,6 +94,11 @@ export interface LeadsListResponse {
 export interface UpdateLeadPayload {
   status?: LeadStatus;
   ownerId?: number | null;
+  name?: string;
+  phone?: string;
+  companyName?: string;
+  description?: string;
+  isContactable?: boolean;
 }
 
 // 创建跟进记录 payload
