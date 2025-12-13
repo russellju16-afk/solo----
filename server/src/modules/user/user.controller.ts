@@ -10,7 +10,12 @@ export class UserController {
 
   @Get()
   async findAll(@Query() query: any) {
-    return this.userService.findAll(query);
+    const res = await this.userService.findAll(query);
+    const data = Array.isArray(res?.data) ? res.data.map((user: any) => this.sanitizeUser(user)) : [];
+    return {
+      ...res,
+      data,
+    };
   }
 
   @Get('me')
@@ -21,17 +26,20 @@ export class UserController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.userService.findOneById(Number(id));
+    const user = await this.userService.findOneById(Number(id));
+    return this.sanitizeUser(user);
   }
 
   @Post()
   async create(@Body() createUserDto: any) {
-    return this.userService.create(createUserDto);
+    const user = await this.userService.create(createUserDto);
+    return this.sanitizeUser(user);
   }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: any) {
-    return this.userService.update(Number(id), updateUserDto);
+    const user = await this.userService.update(Number(id), updateUserDto);
+    return this.sanitizeUser(user);
   }
 
   @Put('me')

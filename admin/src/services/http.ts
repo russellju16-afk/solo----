@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { message } from 'antd'
 import { useAuthStore } from '../store/auth'
 import { getStoredToken } from '../utils/auth'
@@ -18,6 +19,14 @@ const http: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+type HttpClient = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | 'patch'> & {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
 
 // 避免重复弹出 401 提示
 let isHandlingUnauthorized = false
@@ -88,4 +97,7 @@ http.interceptors.response.use(
   }
 )
 
-export default http
+// 拦截器已将返回值统一为 response.data，这里对 axios 方法的类型进行对齐
+const httpClient = http as unknown as HttpClient
+
+export default httpClient

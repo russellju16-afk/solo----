@@ -27,16 +27,31 @@ const Profile: React.FC = () => {
   const [profileForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
 
-  const normalizeUser = (data?: Partial<ProfileInfo> | null): ProfileInfo | null => {
-    if (!data) return null
+  const unwrapData = (value: unknown) => {
+    if (!value || typeof value !== 'object') return value
+    if (!('data' in value)) return value
+    return (value as Record<string, unknown>).data
+  }
+
+  const normalizeUser = (data?: unknown): ProfileInfo | null => {
+    if (!data || typeof data !== 'object') return null
+    const obj = data as Record<string, unknown>
+    const roleValue = obj.role
+    let role: string | undefined
+    if (typeof roleValue === 'string') {
+      role = roleValue
+    } else if (roleValue && typeof roleValue === 'object') {
+      const roleName = (roleValue as Record<string, unknown>).name
+      role = typeof roleName === 'string' ? roleName : undefined
+    }
     return {
-      id: data.id,
-      username: data.username,
-      name: data.name,
-      phone: data.phone,
-      email: data.email,
-      role: data.role?.name || data.role,
-      status: data.status,
+      id: typeof obj.id === 'number' ? obj.id : undefined,
+      username: typeof obj.username === 'string' ? obj.username : undefined,
+      name: typeof obj.name === 'string' ? obj.name : undefined,
+      phone: typeof obj.phone === 'string' ? obj.phone : undefined,
+      email: typeof obj.email === 'string' ? obj.email : undefined,
+      role,
+      status: typeof obj.status === 'number' ? obj.status : undefined,
     }
   }
 
@@ -44,7 +59,7 @@ const Profile: React.FC = () => {
     setLoadingProfile(true)
     try {
       const res = (await userService.getCurrentUser()) as unknown
-      const info = normalizeUser((res as { data?: unknown })?.data ?? res)
+      const info = normalizeUser(unwrapData(res))
       if (info) {
         setProfile(info)
         profileForm.setFieldsValue({
@@ -55,13 +70,23 @@ const Profile: React.FC = () => {
           role: info.role,
         })
         // 同步到全局 store，避免头部昵称不同步
-        useAuthStore.setState((state) => ({
-          ...state,
-          user: {
-            ...(state.user || {}),
-            ...info,
-          },
-        }))
+        useAuthStore.setState((state) => {
+          const prev = state.user
+          const nextId = info.id ?? prev?.id
+          const nextUsername = info.username ?? prev?.username
+          if (!nextId || !nextUsername) return state
+          return {
+            ...state,
+            user: {
+              id: nextId,
+              username: nextUsername,
+              name: info.name ?? prev?.name ?? '',
+              phone: info.phone ?? prev?.phone ?? '',
+              role: info.role ?? prev?.role ?? '',
+              status: info.status ?? prev?.status ?? 1,
+            },
+          }
+        })
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string }
@@ -86,15 +111,27 @@ const Profile: React.FC = () => {
         email: values.email,
       }
       const res = (await userService.updateCurrentUser(payload)) as unknown
-      const info = normalizeUser((res as { data?: unknown })?.data ?? res)
+      const info = normalizeUser(unwrapData(res))
       setProfile(info)
-      useAuthStore.setState((state) => ({
-        ...state,
-        user: {
-          ...(state.user || {}),
-          ...info,
-        },
-      }))
+      if (info) {
+        useAuthStore.setState((state) => {
+          const prev = state.user
+          const nextId = info.id ?? prev?.id
+          const nextUsername = info.username ?? prev?.username
+          if (!nextId || !nextUsername) return state
+          return {
+            ...state,
+            user: {
+              id: nextId,
+              username: nextUsername,
+              name: info.name ?? prev?.name ?? '',
+              phone: info.phone ?? prev?.phone ?? '',
+              role: info.role ?? prev?.role ?? '',
+              status: info.status ?? prev?.status ?? 1,
+            },
+          }
+        })
+      }
       message.success('个人信息已更新')
     } catch (error: unknown) {
       const err = error as { errorFields?: unknown; response?: { data?: { message?: string } }; message?: string }

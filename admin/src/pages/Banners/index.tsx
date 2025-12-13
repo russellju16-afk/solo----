@@ -44,7 +44,8 @@ const Banners: React.FC = () => {
         enabled,
       };
       const res = await bannerService.getBanners(params);
-      setBanners((res.data as BannerItem[]) || []);
+      const list = Array.isArray(res) ? res : res?.data || [];
+      setBanners(list as BannerItem[]);
     } catch (error) {
       message.error('获取Banner列表失败');
     } finally {
@@ -136,6 +137,10 @@ const Banners: React.FC = () => {
       
       if (currentBanner) {
         // 更新Banner
+        if (!currentBanner.id) {
+          message.error('Banner ID 缺失，无法更新');
+          return;
+        }
         await bannerService.updateBanner(currentBanner.id, bannerData);
         message.success('更新成功');
       } else {
