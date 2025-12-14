@@ -68,6 +68,34 @@ async function gotoAndSettle(page, url, settleMs = 1200) {
   await page.waitForTimeout(settleMs)
 }
 
+async function exportLeadsAndVerifyDownload(page) {
+  await gotoAndSettle(page, normalizeUrl(ADMIN_BASE_URL, '/leads'), 1400)
+
+  const exportButton = page.getByRole('button', { name: '导出' }).first()
+  if (!(await exportButton.count())) {
+    throw new Error('export button not found on /leads')
+  }
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 30000 }),
+    exportButton.click(),
+  ])
+
+  const filename = download.suggestedFilename()
+  if (!filename.endsWith('.xlsx')) {
+    throw new Error(`expected xlsx download, got ${filename}`)
+  }
+
+  const filePath = await download.path()
+  if (filePath) {
+    const fs = await import('node:fs/promises')
+    const buf = await fs.readFile(filePath)
+    if (buf.slice(0, 2).toString('utf8') !== 'PK') {
+      throw new Error('expected xlsx zip header (PK)')
+    }
+  }
+}
+
 async function loginAdmin(page, returnUrl) {
   const current = new URL(page.url())
   const shouldGotoLogin = current.origin !== ADMIN_BASE_URL || current.pathname !== '/login'
@@ -111,8 +139,14 @@ async function submitContactLead(page) {
 
   const cityItem = page.locator('.ant-form-item').filter({ hasText: '所在城市/区县' }).first()
   await cityItem.locator('.ant-cascader').click()
-  await page.locator('.ant-cascader-menu-item').first().click()
-  await page.waitForTimeout(300)
+  const cascaderMenus = page.locator('.ant-cascader-dropdown .ant-cascader-menu')
+  // province -> city -> district -> street (depth 4)
+  for (let depth = 0; depth < 4; depth += 1) {
+    const menu = cascaderMenus.nth(depth)
+    await menu.waitFor()
+    await menu.locator('.ant-cascader-menu-item').first().click()
+    await page.waitForTimeout(250)
+  }
 
   await page.getByRole('button', { name: '获取报价' }).first().click()
   await page.waitForTimeout(1200)
@@ -231,7 +265,7 @@ async function createNewsWithCoverAndDelete(page) {
 
 async function main() {
   const browser = await chromium.launch({ headless })
-  const context = await browser.newContext({ viewport: { width: 1280, height: 720 } })
+  const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 720 } })
 
   const results = []
   try {
@@ -261,6 +295,7 @@ async function main() {
 
       await initCompanyInfoTemplate(page)
       await createNewsWithCoverAndDelete(page)
+      await exportLeadsAndVerifyDownload(page)
 
       results.push({ label: 'admin-regression', ...collector })
       await page.close()

@@ -223,7 +223,7 @@ export class UserService implements OnModuleInit {
         });
 
         await this.userRepository.save(defaultUser);
-        console.log(`默认管理员用户已创建：用户名 ${defaultUsername}，密码 ${defaultPassword}`);
+        this.logger.log(`默认管理员用户已创建：用户名 ${defaultUsername}（密码来自 ADMIN_DEFAULT_PASSWORD 环境变量）`);
       }
     }
   }

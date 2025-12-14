@@ -18,6 +18,7 @@ export interface RegionOption {
   code?: string; // 内部用于根据 code 取子级文件
   children?: RegionOption[];
   isLeaf?: boolean;
+  loading?: boolean;
 }
 
 const provinceCache: { options: RegionOption[] | null } = { options: null };

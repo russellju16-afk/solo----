@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
@@ -6,6 +6,8 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
@@ -13,30 +15,29 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
-    
-    console.log('Login attempt:', { username });
+
+    const shouldLog = process.env.NODE_ENV !== 'production';
+    if (shouldLog) this.logger.debug(`Login attempt: ${username}`);
     
     // 查找用户
     const user = await this.userService.findOneByUsername(username);
-    console.log('User found:', !!user);
     
     if (!user) {
-      console.log('Login failed: User not found', { username });
+      if (shouldLog) this.logger.warn(`Login failed: user not found (${username})`);
       throw new UnauthorizedException('用户名或密码错误');
     }
 
     // 验证密码
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    console.log('Password valid:', isPasswordValid);
     
     if (!isPasswordValid) {
-      console.log('Login failed: Invalid password', { username });
+      if (shouldLog) this.logger.warn(`Login failed: invalid password (${username})`);
       throw new UnauthorizedException('用户名或密码错误');
     }
 
     // 检查用户状态
     if (user.status === 0) {
-      console.log('Login failed: User disabled', { username, status: user.status });
+      if (shouldLog) this.logger.warn(`Login failed: user disabled (${username})`);
       throw new UnauthorizedException('用户已禁用');
     }
 
@@ -47,7 +48,7 @@ export class AuthService {
       role: user.role.name,
     };
 
-    console.log('Login successful:', { username, userId: user.id });
+    if (shouldLog) this.logger.debug(`Login successful: ${username}#${user.id}`);
     
     return {
       token: this.jwtService.sign(payload),

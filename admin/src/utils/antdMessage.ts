@@ -6,15 +6,22 @@ let isPatched = false
 
 type MessageMethodName = 'success' | 'error' | 'info' | 'warning' | 'loading' | 'open' | 'destroy'
 
-type AnyFunc = (...args: any[]) => any
+type MessageMethod = (...args: unknown[]) => unknown
 
-const originalMethods = {} as Record<MessageMethodName, AnyFunc>
+const originalMethods: Partial<Record<MessageMethodName, MessageMethod>> = {}
+
+function getMessageMethod(target: unknown, method: MessageMethodName): MessageMethod | undefined {
+  if (!target || (typeof target !== 'object' && typeof target !== 'function')) return
+  const record = target as Record<string, unknown>
+  const candidate = record[method]
+  if (typeof candidate === 'function') return candidate as MessageMethod
+}
 
 function captureOriginal(method: MessageMethodName) {
-  const current = (antdMessage as unknown as Record<string, AnyFunc>)[method]
-  if (typeof current === 'function' && !originalMethods[method]) {
-    originalMethods[method] = current.bind(antdMessage)
-  }
+  if (originalMethods[method]) return
+  const current = getMessageMethod(antdMessage, method)
+  if (!current) return
+  originalMethods[method] = (...args) => current(...args)
 }
 
 export function bindAntdMessage(api: MessageInstance) {
@@ -27,12 +34,14 @@ export function bindAntdMessage(api: MessageInstance) {
   methods.forEach((method) => captureOriginal(method))
 
   methods.forEach((method) => {
-    ;(antdMessage as unknown as Record<string, AnyFunc>)[method] = (...args: any[]) => {
-      if (boundMessageApi && typeof (boundMessageApi as any)[method] === 'function') {
-        return (boundMessageApi as any)[method](...args)
-      }
-      return originalMethods[method]?.(...args)
+    const record = antdMessage as unknown as Record<string, unknown>
+    record[method] = (...args: unknown[]) => {
+      const bound = boundMessageApi
+      const boundMethod = bound ? getMessageMethod(bound, method) : undefined
+      if (boundMethod) return boundMethod(...args)
+
+      const original = originalMethods[method]
+      return original ? original(...args) : undefined
     }
   })
 }
-

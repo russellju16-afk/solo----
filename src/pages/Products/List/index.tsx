@@ -267,6 +267,7 @@ const ProductsList: React.FC = () => {
                     onPressEnter={() => handleSearch(keyword)}
                   />
                   <Button
+                    type="primary"
                     size="large"
                     icon={<SearchOutlined />}
                     onClick={() => handleSearch(keyword)}
@@ -391,75 +392,79 @@ const ProductsList: React.FC = () => {
             </>
           ) : (
             <>
-              <Space size="large" wrap className="justify-center">
-                <Select
-                  placeholder="选择产品类别"
-                  style={{ width: 200 }}
-                  value={categoryId}
-                  onChange={handleCategoryChange}
-                  allowClear
-                  loading={loadingCategories}
-                >
-                  {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
-                  {categoryOptions.map((cat) => (
-                    <Option key={cat.value} value={cat.value}>{cat.label}</Option>
-                  ))}
-                </Select>
-
-                <Space.Compact style={{ width: 320 }}>
-                  <Input
-                    placeholder="搜索产品名称或描述"
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Select
+                    placeholder="选择产品类别"
+                    style={{ width: 200 }}
+                    value={categoryId}
+                    onChange={handleCategoryChange}
                     allowClear
-                    size="large"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    onPressEnter={() => handleSearch(keyword)}
+                    loading={loadingCategories}
+                  >
+                    {categoryOptions.length === 0 && (
+                      <Option key="all" value={undefined}>
+                        全部类别
+                      </Option>
+                    )}
+                    {categoryOptions.map((cat) => (
+                      <Option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </Option>
+                    ))}
+                  </Select>
+
+                  <Space.Compact style={{ width: 360 }}>
+                    <Input
+                      placeholder="搜索产品名称或描述"
+                      allowClear
+                      size="large"
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      onPressEnter={() => handleSearch(keyword)}
+                    />
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<SearchOutlined />}
+                      onClick={() => handleSearch(keyword)}
+                      aria-label="搜索"
+                    >
+                      搜索
+                    </Button>
+                  </Space.Compact>
+
+                  <Select
+                    allowClear
+                    placeholder="应用保存的预设"
+                    style={{ width: 220 }}
+                    onChange={(value) => value && handleApplyPreset(value)}
+                    options={filterPresets.map((preset) => ({ label: preset.name, value: preset.name }))}
                   />
-                  <Button
-                    size="large"
-                    icon={<SearchOutlined />}
-                    onClick={() => handleSearch(keyword)}
-                    aria-label="搜索"
-                  />
-                </Space.Compact>
+                </div>
 
-                <Select
-                  allowClear
-                  placeholder="应用保存的预设"
-                  style={{ width: 200 }}
-                  onChange={(value) => value && handleApplyPreset(value)}
-                  options={filterPresets.map((preset) => ({ label: preset.name, value: preset.name }))}
-                />
-
-                <Button icon={<AppstoreAddOutlined />} onClick={handleSavePreset}>
-                  保存为预设
-                </Button>
-
-                <Button icon={<CopyOutlined />} onClick={handleCopyShareLink}>
-                  复制筛选链接
-                </Button>
-              </Space>
-
-              <div className="flex justify-between items-center flex-wrap gap-3">
-                <Text type="secondary">已选 {selectedProductIds.size} 项用于对比</Text>
-                <Space size="middle" wrap>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <Button icon={<AppstoreAddOutlined />} onClick={handleSavePreset}>
+                    保存预设
+                  </Button>
+                  <Button icon={<CopyOutlined />} onClick={handleCopyShareLink}>
+                    复制链接
+                  </Button>
+                  <Text type="secondary">已选 {selectedProductIds.size} 项</Text>
                   <Button
                     type="primary"
                     disabled={selectedProductIds.size < 2}
                     onClick={() => {
-                      track('product_compare_open', { count: selectedProductIds.size });
-                      setIsCompareOpen(true);
+                      track('product_compare_open', { count: selectedProductIds.size })
+                      setIsCompareOpen(true)
                     }}
                   >
-                    打开对比抽屉
+                    对比
                   </Button>
-                  <Button
-                    disabled={selectedProductIds.size === 0}
-                    onClick={() => setSelectedProductIds(new Set())}
-                  >
+                  <Button disabled={selectedProductIds.size === 0} onClick={() => setSelectedProductIds(new Set())}>
                     清空选择
                   </Button>
-                </Space>
+                </div>
               </div>
             </>
           )}
@@ -492,15 +497,23 @@ const ProductsList: React.FC = () => {
                 <Button
                   type="primary"
                   onClick={() => {
-                    setCategoryId(undefined);
-                    setKeyword('');
-                    setPage(1);
+                    setCategoryId(undefined)
+                    setKeyword('')
+                    setPage(1)
                   }}
                 >
-                  重置筛选
+                  清空条件
+                </Button>
+                <Button
+                  onClick={() => {
+                    resetFilters()
+                    setSelectedProductIds(new Set())
+                  }}
+                >
+                  返回全部
                 </Button>
                 <Link to="/contact#quote">
-                  <Button>获取报价</Button>
+                  <Button>去获取报价</Button>
                 </Link>
               </Space>
             }

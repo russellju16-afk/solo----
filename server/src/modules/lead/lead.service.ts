@@ -49,7 +49,7 @@ export class LeadService {
   // 构建查询条件
   private buildQueryBuilder(query: any) {
     const qb = this.leadRepository.createQueryBuilder('lead')
-      .orderBy('lead.created_at', 'DESC')
+      .orderBy('lead.createdAt', 'DESC')
       .where('1=1');
 
     // 按名称/公司/电话搜索
@@ -357,8 +357,13 @@ export class LeadService {
 
   // 导出线索
   async export(query: any): Promise<Lead[]> {
+    const pageSizeRaw = query?.pageSize ?? query?.page_size;
+    const pageSize = typeof pageSizeRaw === 'number' ? pageSizeRaw : parseInt(pageSizeRaw || '2000', 10);
+    const safePageSize = Number.isFinite(pageSize) ? Math.min(Math.max(pageSize, 1), 5000) : 2000;
+
     const qb = this.buildQueryBuilder(query)
-      .leftJoinAndSelect('lead.owner', 'owner');
+      .leftJoinAndSelect('lead.owner', 'owner')
+      .take(safePageSize);
     return qb.getMany();
   }
 }
