@@ -3,15 +3,18 @@ import Header from './Header'
 import Footer from './Footer'
 import { CompanyInfoProvider } from '@/hooks/useCompanyInfo'
 import ContactWidget from '../ContactWidget'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface AppLayoutProps {
   children: ReactNode
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile()
+
   return (
     <CompanyInfoProvider>
-      <div className="min-h-screen bg-light">
+      <div className="min-h-screen bg-light" style={isMobile ? { paddingBottom: 72 } : undefined}>
         <Header />
         <main className="bg-white">
           {children}

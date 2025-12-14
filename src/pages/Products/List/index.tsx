@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { Card, Typography, Row, Col, Pagination, Select, Input, Button, Space, message, Spin, Tag, Drawer, Checkbox } from 'antd';
-import { SearchOutlined, ShoppingCartOutlined, CopyOutlined, AppstoreAddOutlined } from '@ant-design/icons';
-import { Link, useSearchParams } from 'react-router-dom';
+import { SearchOutlined, ShoppingCartOutlined, CopyOutlined, AppstoreAddOutlined, FilterOutlined } from '@ant-design/icons';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { fetchProducts } from '@/services/products';
 import { Product } from '@/types/product';
 import { track } from '@/utils/track';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -14,6 +15,8 @@ const { Option } = Select;
 const { Search } = Input;
 
 const ProductsList: React.FC = () => {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -38,6 +41,10 @@ const ProductsList: React.FC = () => {
   });
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [draftCategoryId, setDraftCategoryId] = useState<number | undefined>(categoryId);
+  const [draftPresetName, setDraftPresetName] = useState<string | undefined>();
 
   const categoryOptions = useMemo(() => {
     const options = new Map<number, string>();
@@ -68,7 +75,8 @@ const ProductsList: React.FC = () => {
       if (requestIdRef.current !== currentRequestId || controller.signal.aborted) {
         return;
       }
-      setProducts(resp?.data || []);
+      const nextRows = resp?.data || [];
+      setProducts((prev) => (isMobile && page > 1 ? [...prev, ...nextRows] : nextRows));
       setTotal(resp?.total || 0);
     } catch (error) {
       if (controller.signal.aborted || axios.isCancel(error)) {
@@ -80,7 +88,7 @@ const ProductsList: React.FC = () => {
         setLoading(false);
       }
     }
-  }, [categoryId, keyword, page, pageSize]);
+  }, [categoryId, isMobile, keyword, page, pageSize]);
 
   const handleSavePreset = () => {
     const name = window.prompt('为当前筛选命名（示例：大米+25kg）');
@@ -92,6 +100,39 @@ const ProductsList: React.FC = () => {
       : [...filterPresets, newPreset];
     persistPresets(next);
     message.success(exists ? '预设已更新' : '预设已保存');
+  };
+
+  const openFilterDrawer = () => {
+    setDraftCategoryId(categoryId);
+    setDraftPresetName(undefined);
+    setFilterDrawerOpen(true);
+  };
+
+  const applyFilterDrawer = () => {
+    if (draftPresetName) {
+      const preset = filterPresets.find((item) => item.name === draftPresetName);
+      if (preset) {
+        track('product_filter', { presetName: preset.name, categoryId: preset.categoryId, keyword: preset.keyword });
+        setCategoryId(preset.categoryId);
+        setKeyword(preset.keyword);
+        setPage(1);
+      }
+    } else {
+      if (draftCategoryId !== categoryId) {
+        track('product_filter', { categoryId: draftCategoryId, keyword: keyword.trim() || undefined });
+      }
+      setCategoryId(draftCategoryId);
+      setPage(1);
+    }
+    setFilterDrawerOpen(false);
+  };
+
+  const resetFilters = () => {
+    setDraftCategoryId(undefined);
+    setDraftPresetName(undefined);
+    setCategoryId(undefined);
+    setKeyword('');
+    setPage(1);
   };
 
   const handleApplyPreset = (name: string) => {
@@ -129,6 +170,12 @@ const ProductsList: React.FC = () => {
     () => products.filter((item) => selectedProductIds.has(item.id)),
     [products, selectedProductIds]
   );
+
+  const activeCategoryLabel = useMemo(() => {
+    if (!categoryId) return '';
+    const found = categoryOptions.find((item) => item.value === categoryId);
+    return found?.label || String(categoryId);
+  }, [categoryId, categoryOptions]);
 
   useEffect(() => {
     const params: Record<string, string> = {
@@ -172,7 +219,7 @@ const ProductsList: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen py-8 md:py-12">
       <Helmet>
         <title>产品中心 - 西安超群粮油贸易有限公司</title>
         <meta name="description" content="西安超群粮油贸易有限公司产品中心，提供各类优质粮油产品。" />
@@ -181,7 +228,7 @@ const ProductsList: React.FC = () => {
 
       <div className="container mx-auto px-4">
         {/* 页面标题 */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 md:mb-12 text-center">
           <Title level={2}>产品中心</Title>
           <Paragraph className="max-w-3xl mx-auto">
             我们提供各类优质粮油产品，满足您的不同需求。所有产品均经过严格的质量检测，确保品质安全。
@@ -189,108 +236,252 @@ const ProductsList: React.FC = () => {
         </div>
 
         {/* 筛选和搜索 */}
-        <div className="mb-12 bg-white p-6 rounded-lg shadow-md space-y-4">
-          <Space size="large" wrap className="justify-center">
-            <Select
-              placeholder="选择产品类别"
-              style={{ width: 200 }}
-              value={categoryId}
-              onChange={handleCategoryChange}
-              allowClear
-            >
-              {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
-              {categoryOptions.map((cat) => (
-                <Option key={cat.value} value={cat.value}>{cat.label}</Option>
-              ))}
-            </Select>
+        <div className="mb-8 md:mb-12 bg-white p-4 md:p-6 rounded-lg shadow-md space-y-4">
+          {isMobile ? (
+            <>
+              <div className="flex items-center gap-3">
+                <Search
+                  placeholder="搜索产品名称或描述"
+                  allowClear
+                  size="large"
+                  value={keyword}
+                  onSearch={handleSearch}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="flex-1"
+                />
+                <Button size="large" icon={<FilterOutlined />} onClick={openFilterDrawer} aria-label="打开筛选">
+                  筛选
+                </Button>
+              </div>
 
-            <Search
-              placeholder="搜索产品名称或描述"
-              allowClear
-              enterButton={<SearchOutlined />}
-              size="large"
-              value={keyword}
-              onSearch={handleSearch}
-              onChange={(e) => setKeyword(e.target.value)}
-              style={{ width: 320 }}
-            />
+              {(keyword || categoryId) && (
+                <div className="cq-scroll-x" style={{ whiteSpace: 'nowrap' }}>
+                  <Space size={8}>
+                    {keyword ? (
+                      <Tag
+                        closable
+                        onClose={(e) => {
+                          e.preventDefault()
+                          setKeyword('')
+                          setPage(1)
+                        }}
+                      >
+                        关键词：{keyword}
+                      </Tag>
+                    ) : null}
+                    {categoryId ? (
+                      <Tag
+                        closable
+                        onClose={(e) => {
+                          e.preventDefault()
+                          setCategoryId(undefined)
+                          setPage(1)
+                        }}
+                      >
+                        分类：{activeCategoryLabel}
+                      </Tag>
+                    ) : null}
+                    <Button size="small" onClick={resetFilters}>
+                      重置
+                    </Button>
+                  </Space>
+                </div>
+              )}
 
-            <Select
-              allowClear
-              placeholder="应用保存的预设"
-              style={{ width: 200 }}
-              onChange={(value) => value && handleApplyPreset(value)}
-              options={filterPresets.map((preset) => ({ label: preset.name, value: preset.name }))}
-            />
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <Text type="secondary">已选 {selectedProductIds.size} 项用于对比</Text>
+                <Space size="middle" wrap>
+                  <Button
+                    type="primary"
+                    disabled={selectedProductIds.size < 2}
+                    onClick={() => {
+                      track('product_compare_open', { count: selectedProductIds.size })
+                      setIsCompareOpen(true)
+                    }}
+                  >
+                    对比
+                  </Button>
+                  <Button disabled={selectedProductIds.size === 0} onClick={() => setSelectedProductIds(new Set())}>
+                    清空
+                  </Button>
+                </Space>
+              </div>
 
-            <Button icon={<AppstoreAddOutlined />} onClick={handleSavePreset}>
-              保存为预设
-            </Button>
-
-            <Button icon={<CopyOutlined />} onClick={handleCopyShareLink}>
-              复制筛选链接
-            </Button>
-          </Space>
-
-          <div className="flex justify-between items-center flex-wrap gap-3">
-            <Text type="secondary">已选 {selectedProductIds.size} 项用于对比</Text>
-            <Space size="middle" wrap>
-              <Button
-                type="primary"
-                disabled={selectedProductIds.size < 2}
-                onClick={() => {
-                  track('product_compare_open', { count: selectedProductIds.size });
-                  setIsCompareOpen(true);
-                }}
+              <Drawer
+                title="筛选"
+                placement="right"
+                width="86vw"
+                open={filterDrawerOpen}
+                onClose={() => setFilterDrawerOpen(false)}
+                footer={
+                  <div className="flex gap-3">
+                    <Button onClick={resetFilters} style={{ flex: 1 }}>
+                      重置
+                    </Button>
+                    <Button type="primary" onClick={applyFilterDrawer} style={{ flex: 1 }}>
+                      应用筛选
+                    </Button>
+                  </div>
+                }
               >
-                打开对比抽屉
-              </Button>
-              <Button
-                disabled={selectedProductIds.size === 0}
-                onClick={() => setSelectedProductIds(new Set())}
-              >
-                清空选择
-              </Button>
-            </Space>
-          </div>
+                <Space direction="vertical" size={14} style={{ width: '100%' }}>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">产品分类</div>
+                    <Select
+                      placeholder="选择产品类别"
+                      style={{ width: '100%' }}
+                      value={draftCategoryId}
+                      onChange={(value) => setDraftCategoryId(value)}
+                      allowClear
+                    >
+                      {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
+                      {categoryOptions.map((cat) => (
+                        <Option key={cat.value} value={cat.value}>{cat.label}</Option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">筛选预设</div>
+                    <Select
+                      allowClear
+                      placeholder="选择已保存的预设"
+                      style={{ width: '100%' }}
+                      value={draftPresetName}
+                      onChange={(value) => setDraftPresetName(value)}
+                      options={filterPresets.map((preset) => ({ label: preset.name, value: preset.name }))}
+                    />
+                  </div>
+
+                  <Space wrap size={10}>
+                    <Button icon={<AppstoreAddOutlined />} onClick={handleSavePreset}>
+                      保存为预设
+                    </Button>
+                    <Button icon={<CopyOutlined />} onClick={handleCopyShareLink}>
+                      复制筛选链接
+                    </Button>
+                  </Space>
+                </Space>
+              </Drawer>
+            </>
+          ) : (
+            <>
+              <Space size="large" wrap className="justify-center">
+                <Select
+                  placeholder="选择产品类别"
+                  style={{ width: 200 }}
+                  value={categoryId}
+                  onChange={handleCategoryChange}
+                  allowClear
+                >
+                  {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
+                  {categoryOptions.map((cat) => (
+                    <Option key={cat.value} value={cat.value}>{cat.label}</Option>
+                  ))}
+                </Select>
+
+                <Search
+                  placeholder="搜索产品名称或描述"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size="large"
+                  value={keyword}
+                  onSearch={handleSearch}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  style={{ width: 320 }}
+                />
+
+                <Select
+                  allowClear
+                  placeholder="应用保存的预设"
+                  style={{ width: 200 }}
+                  onChange={(value) => value && handleApplyPreset(value)}
+                  options={filterPresets.map((preset) => ({ label: preset.name, value: preset.name }))}
+                />
+
+                <Button icon={<AppstoreAddOutlined />} onClick={handleSavePreset}>
+                  保存为预设
+                </Button>
+
+                <Button icon={<CopyOutlined />} onClick={handleCopyShareLink}>
+                  复制筛选链接
+                </Button>
+              </Space>
+
+              <div className="flex justify-between items-center flex-wrap gap-3">
+                <Text type="secondary">已选 {selectedProductIds.size} 项用于对比</Text>
+                <Space size="middle" wrap>
+                  <Button
+                    type="primary"
+                    disabled={selectedProductIds.size < 2}
+                    onClick={() => {
+                      track('product_compare_open', { count: selectedProductIds.size });
+                      setIsCompareOpen(true);
+                    }}
+                  >
+                    打开对比抽屉
+                  </Button>
+                  <Button
+                    disabled={selectedProductIds.size === 0}
+                    onClick={() => setSelectedProductIds(new Set())}
+                  >
+                    清空选择
+                  </Button>
+                </Space>
+              </div>
+            </>
+          )}
         </div>
 
         {/* 产品列表 */}
         <Spin spinning={loading} tip="加载产品中...">
           <Row gutter={[16, 16]}>
-            {products.map(product => (
-              <Col key={product.id} xs={24} sm={12} md={8}>
-                <Card
-                  hoverable
-                  cover={<img alt={product.name} src={product.images?.[0]?.url || 'https://via.placeholder.com/300x200/FFFFFF/333333?text=%E4%BA%A7%E5%93%81'} className="h-[200px] object-cover" />}
-                  extra={(
-                    <Checkbox
-                      checked={selectedProductIds.has(product.id)}
-                      onChange={() => toggleSelectProduct(product.id)}
-                    >
-                      对比
-                    </Checkbox>
-                  )}
-                  actions={[
-                    <ShoppingCartOutlined key="add" />,
-                    <Link to={`/products/${product.id}`} key="detail">
-                      <Button
-                        type="link"
-                      >
-                        查看详情
-                      </Button>
-                    </Link>,
-                  ]}
-                >
-                  <Meta
-                    title={
-                      <div className="flex items-center justify-between gap-2">
-                        <span>{product.name}</span>
-                        {product.price && (
-                          <Tag color="red">¥{product.price}</Tag>
-                        )}
-                      </div>
-                    }
+	            {products.map(product => (
+	              <Col key={product.id} xs={24} sm={12} md={8}>
+	                <Card
+	                  hoverable
+	                  cover={
+	                    <img
+	                      alt={product.name}
+	                      src={product.images?.[0]?.url || 'https://via.placeholder.com/300x200/FFFFFF/333333?text=%E4%BA%A7%E5%93%81'}
+	                      className="w-full h-[160px] sm:h-[200px] object-cover"
+	                    />
+	                  }
+	                  extra={(
+	                    <Checkbox
+	                      checked={selectedProductIds.has(product.id)}
+	                      onChange={() => toggleSelectProduct(product.id)}
+	                    >
+	                      对比
+	                    </Checkbox>
+	                  )}
+	                  actions={
+	                    isMobile
+	                      ? [
+	                        <Button type="primary" size="small" onClick={() => navigate(`/products/${product.id}`)} key="quote">
+	                          咨询报价
+	                        </Button>,
+	                        <Link to={`/products/${product.id}`} key="detail">
+	                          <Button type="link">查看详情</Button>
+	                        </Link>,
+	                      ]
+	                      : [
+	                        <ShoppingCartOutlined key="add" />,
+	                        <Link to={`/products/${product.id}`} key="detail">
+	                          <Button type="link">查看详情</Button>
+	                        </Link>,
+	                      ]
+	                  }
+	                >
+	                  <Meta
+	                    title={
+	                      <div className="flex items-start justify-between gap-2">
+	                        <span className={isMobile ? 'block cq-clamp-2' : ''}>{product.name}</span>
+	                        {product.price && (
+	                          <Tag color="red">¥{product.price}</Tag>
+	                        )}
+	                      </div>
+	                    }
                     description={
                       <>
                         <Paragraph ellipsis={{ rows: 2 }}>{product.description || '暂无产品描述'}</Paragraph>
@@ -321,7 +512,7 @@ const ProductsList: React.FC = () => {
         <Drawer
           title={`产品对比（${selectedProducts.length}）`}
           placement="right"
-          width={480}
+          width={isMobile ? '100%' : 480}
           onClose={() => setIsCompareOpen(false)}
           open={isCompareOpen}
         >
@@ -348,17 +539,27 @@ const ProductsList: React.FC = () => {
 
         {/* 分页 */}
         {total > pageSize && (
-          <div className="mt-12 flex justify-center">
-            <Pagination
-              current={page}
-              pageSize={pageSize}
-              total={total}
-              onChange={handlePageChange}
-              onShowSizeChange={(_, size) => handlePageChange(1, size)}
-              showSizeChanger
-              pageSizeOptions={['6', '12', '24']}
-              showTotal={(t, range) => `第 ${range[0]}-${range[1]} 条，共 ${t} 条`}
-            />
+          <div className="mt-10 md:mt-12 flex justify-center">
+            {isMobile ? (
+              <Button
+                size="large"
+                disabled={page * pageSize >= total}
+                onClick={() => setPage((prev) => prev + 1)}
+              >
+                {page * pageSize >= total ? '已加载全部' : '加载更多'}
+              </Button>
+            ) : (
+              <Pagination
+                current={page}
+                pageSize={pageSize}
+                total={total}
+                onChange={handlePageChange}
+                onShowSizeChange={(_, size) => handlePageChange(1, size)}
+                showSizeChanger
+                pageSizeOptions={['6', '12', '24']}
+                showTotal={(t, range) => `第 ${range[0]}-${range[1]} 条，共 ${t} 条`}
+              />
+            )}
           </div>
         )}
 

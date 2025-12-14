@@ -16,6 +16,7 @@ import { AxiosError } from 'axios';
 import { submitLead } from '@/services/leads';
 import RegionCascader from '@/components/common/RegionCascader';
 import { track } from '@/utils/track';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title } = Typography;
 
@@ -48,6 +49,9 @@ export const LeadForm: React.FC<LeadFormProps> = ({
   compact = false,
   onSubmitted,
 }) => {
+  const isMobile = useIsMobile();
+  const fieldSize = isMobile ? 'large' : 'middle';
+
   // 初始化表单
   const { control, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<LeadFormValues>({
     defaultValues: {
@@ -154,7 +158,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
             control={control}
             rules={{ required: '姓名不能为空' }}
             render={({ field }) => (
-              <Input placeholder="请输入您的姓名" {...field} className="w-full" />
+              <Input placeholder="请输入您的姓名" {...field} className="w-full" size={fieldSize} />
             )}
           />
         </Form.Item>
@@ -177,7 +181,14 @@ export const LeadForm: React.FC<LeadFormProps> = ({
               },
             }}
             render={({ field }) => (
-              <Input placeholder="请输入您的手机号" {...field} className="w-full" />
+              <Input
+                placeholder="请输入您的手机号"
+                {...field}
+                className="w-full"
+                size={fieldSize}
+                inputMode="tel"
+                autoComplete="tel"
+              />
             )}
           />
         </Form.Item>
@@ -194,7 +205,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
             control={control}
             rules={{ required: '公司名称不能为空' }}
             render={({ field }) => (
-              <Input placeholder="请输入您的公司名称" {...field} className="w-full" />
+              <Input placeholder="请输入您的公司名称" {...field} className="w-full" size={fieldSize} autoComplete="organization" />
             )}
           />
         </Form.Item>
@@ -216,6 +227,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
                 options={channelTypeOptions}
                 {...field}
                 className="w-full"
+                size={fieldSize}
               />
             )}
           />
@@ -241,6 +253,7 @@ export const LeadForm: React.FC<LeadFormProps> = ({
                     value={field.value as string[] | undefined}
                     onChange={(val) => field.onChange(val)}
                     className="w-full"
+                    size={fieldSize}
                   />
                 )}
               />

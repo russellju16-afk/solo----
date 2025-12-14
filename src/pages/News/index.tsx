@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Button, Pagination, Select } from 'antd';
+import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag } from 'antd';
 import { ArrowRightOutlined, CalendarOutlined, EyeOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -19,6 +20,7 @@ interface News {
 }
 
 const News: React.FC = () => {
+  const isMobile = useIsMobile();
   const news: News[] = [
     {
       id: 1,
@@ -95,9 +97,10 @@ const News: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedNews = filteredNews.slice(startIndex, endIndex);
+  const visibleNews = isMobile ? filteredNews.slice(0, currentPage * pageSize) : paginatedNews;
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen py-8 md:py-12">
       <Helmet>
         <title>新闻资讯 - 西安超群粮油贸易有限公司</title>
         <meta name="description" content="西安超群粮油贸易有限公司新闻资讯，包括市场动态、选购指南、公司新闻、实用技巧和产品动态。" />
@@ -106,7 +109,7 @@ const News: React.FC = () => {
 
       <div className="container mx-auto px-4">
         {/* 页面标题 */}
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <Title level={2}>新闻资讯</Title>
           <Paragraph className="max-w-3xl mx-auto">
             为您提供最新的粮油市场动态、选购指南、公司新闻和实用技巧。
@@ -114,10 +117,10 @@ const News: React.FC = () => {
         </div>
 
         {/* 筛选 */}
-        <div className="mb-12 flex justify-center">
+        <div className="mb-8 md:mb-12 flex justify-center">
           <Select
             placeholder="选择新闻类别"
-            style={{ width: 200 }}
+            style={{ width: isMobile ? '100%' : 200, maxWidth: 320 }}
             onChange={handleCategoryChange}
             allowClear
           >
@@ -128,31 +131,61 @@ const News: React.FC = () => {
         </div>
 
         {/* 新闻列表 */}
-        <Row gutter={[24, 24]}>
-          {paginatedNews.map(newsItem => (
-            <Col key={newsItem.id} xs={24} sm={12} md={8}>
-              <Card
-                hoverable
-                className="h-full transition-all hover:shadow-xl"
-                cover={
-                  <div className="h-[200px] overflow-hidden">
-                    <img 
-                      alt={newsItem.title} 
-                      src={newsItem.image} 
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+        {isMobile ? (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <List
+              itemLayout="horizontal"
+              dataSource={visibleNews}
+              renderItem={(newsItem) => (
+                <List.Item className="px-4 py-4">
+                  <Link to={`/news/${newsItem.id}`} className="flex gap-4 w-full">
+                    <img
+                      src={newsItem.image}
+                      alt={newsItem.title}
+                      className="w-28 h-20 object-cover rounded-lg flex-shrink-0"
+                      loading="lazy"
                     />
-                  </div>
-                }
-                actions={[
-                  <div className="flex items-center text-xs text-gray-500">
-                    <CalendarOutlined className="mr-1" />
-                    <span>{newsItem.date}</span>
-                  </div>,
-                  <div className="flex items-center text-xs text-gray-500">
-                    <EyeOutlined className="mr-1" />
-                    <span>{newsItem.views}</span>
-                  </div>,
-                  <Link to={`/news/${newsItem.id}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-gray-900 cq-clamp-2">{newsItem.title}</div>
+                      <div className="text-sm text-gray-600 mt-1 cq-clamp-2">{newsItem.description}</div>
+                      <Space size={6} wrap className="mt-2">
+                        <Tag color="blue">{newsItem.category}</Tag>
+                        <Tag icon={<CalendarOutlined />}>{newsItem.date}</Tag>
+                        <Tag icon={<EyeOutlined />}>{newsItem.views}</Tag>
+                      </Space>
+                    </div>
+                  </Link>
+                </List.Item>
+              )}
+            />
+          </div>
+        ) : (
+          <Row gutter={[24, 24]}>
+            {paginatedNews.map(newsItem => (
+              <Col key={newsItem.id} xs={24} sm={12} md={8}>
+                <Card
+                  hoverable
+                  className="h-full transition-all hover:shadow-xl"
+                  cover={
+                    <div className="h-[200px] overflow-hidden">
+                      <img 
+                        alt={newsItem.title} 
+                        src={newsItem.image} 
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  }
+                  actions={[
+                    <div className="flex items-center text-xs text-gray-500" key="date">
+                      <CalendarOutlined className="mr-1" />
+                      <span>{newsItem.date}</span>
+                    </div>,
+                    <div className="flex items-center text-xs text-gray-500" key="views">
+                      <EyeOutlined className="mr-1" />
+                      <span>{newsItem.views}</span>
+                    </div>,
+                    <Link to={`/news/${newsItem.id}`} key="detail">
                       <Button
                         type="link"
                         icon={<ArrowRightOutlined />}
@@ -161,42 +194,53 @@ const News: React.FC = () => {
                         查看详情
                       </Button>
                     </Link>
-                ]}
-              >
-                <Meta
-                  title={newsItem.title}
-                  description={
-                    <div className="space-y-3">
-                      <Paragraph ellipsis={{ rows: 2 }}>{newsItem.description}</Paragraph>
-                      <div className="flex justify-between items-center">
-                        <Text type="secondary" className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {newsItem.category}
-                        </Text>
+                  ]}
+                >
+                  <Meta
+                    title={newsItem.title}
+                    description={
+                      <div className="space-y-3">
+                        <Paragraph ellipsis={{ rows: 2 }}>{newsItem.description}</Paragraph>
+                        <div className="flex justify-between items-center">
+                          <Text type="secondary" className="text-xs bg-gray-100 px-2 py-1 rounded">
+                            {newsItem.category}
+                          </Text>
+                        </div>
                       </div>
-                    </div>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                    }
+                  />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
 
         {/* 分页 */}
         {filteredNews.length > pageSize && (
-          <div className="mt-12 flex justify-center">
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredNews.length}
-              onChange={setCurrentPage}
-              onShowSizeChange={(_, size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-              showSizeChanger
-              pageSizeOptions={['6', '12', '24']}
-              showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
-            />
+          <div className="mt-10 md:mt-12 flex justify-center">
+            {isMobile ? (
+              <Button
+                size="large"
+                disabled={visibleNews.length >= filteredNews.length}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                {visibleNews.length >= filteredNews.length ? '已加载全部' : '加载更多'}
+              </Button>
+            ) : (
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredNews.length}
+                onChange={setCurrentPage}
+                onShowSizeChange={(_, size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                showSizeChanger
+                pageSizeOptions={['6', '12', '24']}
+                showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
+              />
+            )}
           </div>
         )}
 

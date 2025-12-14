@@ -6,11 +6,13 @@ import { LeadForm } from '@/components/forms/LeadForm'
 import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 import { fetchFaqs } from '@/services/content'
 import { FaqItem } from '@/types/content'
+import { useLocation } from 'react-router-dom'
 
 const { Title, Paragraph } = Typography
 
 const Contact: React.FC = () => {
   const { companyInfo } = useCompanyInfo()
+  const location = useLocation()
   const formRef = React.useRef<HTMLDivElement | null>(null)
   const [faqs, setFaqs] = React.useState<FaqItem[]>([])
   const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司'
@@ -36,9 +38,20 @@ const Contact: React.FC = () => {
     return () => controller.abort()
   }, [])
 
-  const handleConsult = () => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  React.useEffect(() => {
+    if (location.hash === '#quote') {
+      // 等待首屏渲染完成再滚动，避免移动端抖动
+      window.setTimeout(() => scrollToForm(), 0)
+    }
+  }, [location.hash])
 
   const handleCopy = async (text: string) => {
     try {
@@ -58,7 +71,7 @@ const Contact: React.FC = () => {
     message.info('暂未提供微信二维码')
   }
   return (
-    <div className="py-12">
+    <div className="py-8 md:py-12">
       <Helmet>
         <title>联系我们 - {companyName}</title>
         <meta name="description" content={companyInfo?.seo_description || `${companyName}联系方式，地址：${companyAddress}，电话：${companyPhone}`} />
@@ -150,7 +163,7 @@ const Contact: React.FC = () => {
           <div ref={formRef} className="bg-white rounded-lg shadow-md p-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">立即咨询</h2>
-              <Button type="link" onClick={handleConsult}>返回顶部</Button>
+              <Button type="link" onClick={scrollToTop}>返回顶部</Button>
             </div>
             <LeadForm
               source="contact_page"
@@ -180,7 +193,7 @@ const Contact: React.FC = () => {
             </Button>
             <Button size="large" onClick={() => handleCopy(companyPhone)} icon={<CopyOutlined />}>复制电话</Button>
             <Button size="large" icon={<WechatOutlined />} onClick={handleWechatJump}>微信咨询</Button>
-            <Button size="large" type="dashed" onClick={handleConsult}>填写咨询表单</Button>
+            <Button size="large" type="dashed" onClick={scrollToForm}>填写咨询表单</Button>
           </Space>
         </div>
       </div>

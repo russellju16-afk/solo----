@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Button, Pagination, Select } from 'antd';
+import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag } from 'antd';
 import { ArrowRightOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Paragraph } = Typography;
 const { Meta } = Card;
@@ -19,6 +20,7 @@ interface Case {
 }
 
 const Cases: React.FC = () => {
+  const isMobile = useIsMobile();
   const cases: Case[] = [
     {
       id: 1,
@@ -95,9 +97,10 @@ const Cases: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedCases = filteredCases.slice(startIndex, endIndex);
+  const visibleCases = isMobile ? filteredCases.slice(0, currentPage * pageSize) : paginatedCases;
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen py-8 md:py-12">
       <Helmet>
         <title>成功案例 - 西安超群粮油贸易有限公司</title>
         <meta name="description" content="西安超群粮油贸易有限公司成功案例展示，包括超市、学校、餐饮、企业等多个行业的粮油供应服务案例。" />
@@ -106,7 +109,7 @@ const Cases: React.FC = () => {
 
       <div className="container mx-auto px-4">
         {/* 页面标题 */}
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <Title level={2}>成功案例</Title>
           <Paragraph className="max-w-3xl mx-auto">
             我们为多个行业提供优质的粮油服务，积累了丰富的经验和成功案例。
@@ -114,10 +117,10 @@ const Cases: React.FC = () => {
         </div>
 
         {/* 筛选 */}
-        <div className="mb-12 flex justify-center">
+        <div className="mb-8 md:mb-12 flex justify-center">
           <Select
             placeholder="选择案例类别"
-            style={{ width: 200 }}
+            style={{ width: isMobile ? '100%' : 200, maxWidth: 320 }}
             onChange={handleCategoryChange}
             allowClear
           >
@@ -128,23 +131,53 @@ const Cases: React.FC = () => {
         </div>
 
         {/* 案例列表 */}
-        <Row gutter={[24, 24]}>
-          {paginatedCases.map(caseItem => (
-            <Col key={caseItem.id} xs={24} sm={12} md={8}>
-              <Card
-                hoverable
-                className="h-full transition-all hover:shadow-xl"
-                cover={
-                  <div className="h-[200px] overflow-hidden">
-                    <img 
-                      alt={caseItem.title} 
-                      src={caseItem.image} 
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+        {isMobile ? (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <List
+              itemLayout="horizontal"
+              dataSource={visibleCases}
+              renderItem={(caseItem) => (
+                <List.Item className="px-4 py-4">
+                  <Link to={`/cases/${caseItem.id}`} className="flex gap-4 w-full">
+                    <img
+                      src={caseItem.image}
+                      alt={caseItem.title}
+                      className="w-28 h-20 object-cover rounded-lg flex-shrink-0"
+                      loading="lazy"
                     />
-                  </div>
-                }
-                actions={[
-                  <Link to={`/cases/${caseItem.id}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-gray-900 cq-clamp-2">{caseItem.title}</div>
+                      <div className="text-sm text-gray-600 mt-1 cq-clamp-2">{caseItem.description}</div>
+                      <Space size={6} wrap className="mt-2">
+                        <Tag color="blue">{caseItem.category}</Tag>
+                        <Tag>{caseItem.client}</Tag>
+                        <Tag>{caseItem.date}</Tag>
+                      </Space>
+                    </div>
+                  </Link>
+                </List.Item>
+              )}
+            />
+          </div>
+        ) : (
+          <Row gutter={[24, 24]}>
+            {paginatedCases.map(caseItem => (
+              <Col key={caseItem.id} xs={24} sm={12} md={8}>
+                <Card
+                  hoverable
+                  className="h-full transition-all hover:shadow-xl"
+                  cover={
+                    <div className="h-[200px] overflow-hidden">
+                      <img 
+                        alt={caseItem.title} 
+                        src={caseItem.image} 
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  }
+                  actions={[
+                    <Link to={`/cases/${caseItem.id}`} key="detail">
                       <Button
                         type="link"
                         icon={<ArrowRightOutlined />}
@@ -153,51 +186,62 @@ const Cases: React.FC = () => {
                         查看详情
                       </Button>
                     </Link>
-                ]}
-              >
-                <Meta
-                  title={caseItem.title}
-                  description={
-                    <div className="space-y-3">
-                      <Paragraph ellipsis={{ rows: 2 }}>{caseItem.description}</Paragraph>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                          <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                          <span>{caseItem.category}</span>
-                        </div>
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                          <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                          <span>{caseItem.client}</span>
-                        </div>
-                        <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                          <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                          <span>{caseItem.date}</span>
+                  ]}
+                >
+                  <Meta
+                    title={caseItem.title}
+                    description={
+                      <div className="space-y-3">
+                        <Paragraph ellipsis={{ rows: 2 }}>{caseItem.description}</Paragraph>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                            <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
+                            <span>{caseItem.category}</span>
+                          </div>
+                          <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                            <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
+                            <span>{caseItem.client}</span>
+                          </div>
+                          <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                            <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
+                            <span>{caseItem.date}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  }
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                    }
+                  />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
 
         {/* 分页 */}
         {filteredCases.length > pageSize && (
-          <div className="mt-12 flex justify-center">
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={filteredCases.length}
-              onChange={setCurrentPage}
-              onShowSizeChange={(_, size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-              showSizeChanger
-              pageSizeOptions={['6', '12', '24']}
-              showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
-            />
+          <div className="mt-10 md:mt-12 flex justify-center">
+            {isMobile ? (
+              <Button
+                size="large"
+                disabled={visibleCases.length >= filteredCases.length}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                {visibleCases.length >= filteredCases.length ? '已加载全部' : '加载更多'}
+              </Button>
+            ) : (
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredCases.length}
+                onChange={setCurrentPage}
+                onShowSizeChange={(_, size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                showSizeChanger
+                pageSizeOptions={['6', '12', '24']}
+                showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
+              />
+            )}
           </div>
         )}
 
