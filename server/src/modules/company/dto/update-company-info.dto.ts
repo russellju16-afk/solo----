@@ -59,6 +59,10 @@ export class UpdateCompanyInfoDto {
 
   @IsOptional()
   @IsString()
+  wechat_qr_code?: string;
+
+  @IsOptional()
+  @IsString()
   social_media?: string;
 
   @IsOptional()
@@ -73,4 +77,3 @@ export class UpdateCompanyInfoDto {
   @IsString()
   seo_description?: string;
 }
-

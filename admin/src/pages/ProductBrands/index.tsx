@@ -147,16 +147,17 @@ const ProductBrands: React.FC = () => {
           </Button>
         </Space>
         <Space>
-          <Input.Search
-            placeholder="搜索品牌名称"
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="middle"
-            style={{ width: 300 }}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <Space.Compact style={{ width: 300 }}>
+            <Input
+              placeholder="搜索品牌名称"
+              allowClear
+              size="middle"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <Button size="middle" icon={<SearchOutlined />} onClick={handleSearch} aria-label="搜索" />
+          </Space.Compact>
           <Button onClick={handleReset}>重置</Button>
         </Space>
       </div>

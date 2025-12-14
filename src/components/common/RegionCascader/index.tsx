@@ -4,7 +4,7 @@ import { loadProvinceList, loadRegionSlice, RegionOption } from '@/utils/regionL
 
 type RegionCascaderProps = Omit<CascaderProps<RegionOption, 'value', false>, 'options' | 'loadData'>;
 
-export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
+export const RegionCascader = React.forwardRef<any, RegionCascaderProps>((props, ref) => {
   const [options, setOptions] = React.useState<RegionOption[]>([]);
 
   // 初始化省级列表
@@ -36,6 +36,7 @@ export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
 
   return (
     <Cascader<RegionOption, 'value'>
+      ref={ref}
       options={options}
       loadData={handleLoadData}
       changeOnSelect
@@ -45,6 +46,8 @@ export const RegionCascader: React.FC<RegionCascaderProps> = (props) => {
       {...props}
     />
   );
-};
+});
+
+RegionCascader.displayName = 'RegionCascader';
 
 export default RegionCascader;

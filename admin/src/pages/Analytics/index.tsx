@@ -222,22 +222,22 @@ const Analytics: React.FC = () => {
 
       <Row gutter={[16, 16]} className="analytics-kpi-row">
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+          <Card className="analytics-kpi-card" variant="borderless" loading={loading}>
             <Statistic title="浏览（PV）" value={kpis.views} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+          <Card className="analytics-kpi-card" variant="borderless" loading={loading}>
             <Statistic title="筛选/搜索" value={kpis.searches} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+          <Card className="analytics-kpi-card" variant="borderless" loading={loading}>
             <Statistic title="对比次数" value={kpis.compares} suffix="次" valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="analytics-kpi-card" bordered={false} loading={loading}>
+          <Card className="analytics-kpi-card" variant="borderless" loading={loading}>
             <Statistic title="询价转化率" value={kpis.quoteConversionRate} suffix="%" precision={2} valueStyle={{ fontSize: 28, fontWeight: 700 }} />
           </Card>
         </Col>
@@ -246,7 +246,7 @@ const Analytics: React.FC = () => {
       <div className="analytics-sections">
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title="漏斗表现" bordered={false} loading={loading}>
+            <Card title="漏斗表现" variant="borderless" loading={loading}>
               <div className="analytics-funnel-list">
                 {funnel.map((item) => {
                   const percent = Number.isFinite(item.percent) ? item.percent : 0
@@ -267,7 +267,7 @@ const Analytics: React.FC = () => {
           </Col>
 
           <Col xs={24} lg={12}>
-            <Card title="线索来源分布" bordered={false}>
+            <Card title="线索来源分布" variant="borderless">
               <Table
                 columns={[
                   { title: '渠道', dataIndex: 'channel', key: 'channel' },
@@ -292,7 +292,7 @@ const Analytics: React.FC = () => {
 
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title="热门筛选组合" bordered={false}>
+            <Card title="热门筛选组合" variant="borderless">
               <Table
                 columns={[
                   { title: '预设', dataIndex: 'name', key: 'name' },
@@ -308,7 +308,7 @@ const Analytics: React.FC = () => {
           </Col>
 
           <Col xs={24} lg={12}>
-            <Card title="渠道服务水平" bordered={false} loading={loading}>
+            <Card title="渠道服务水平" variant="borderless" loading={loading}>
               <div className="analytics-service-list">
                 <div className="analytics-service-item">
                   <div className="analytics-service-meta">

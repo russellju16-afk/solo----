@@ -181,7 +181,7 @@ const Profile: React.FC = () => {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={9}>
-          <Card className="profile-card" bordered={false} loading={loadingProfile}>
+          <Card className="profile-card" variant="borderless" loading={loadingProfile}>
             <Space align="center" size={14} className="profile-avatar-block">
               <div className="profile-avatar">
                 {displayName.slice(0, 1)}
@@ -220,7 +220,7 @@ const Profile: React.FC = () => {
         </Col>
 
         <Col xs={24} lg={15}>
-          <Card className="profile-card" bordered={false} title="基本信息" extra={<Text type="secondary">可编辑姓名 / 手机 / 邮箱</Text>}>
+          <Card className="profile-card" variant="borderless" title="基本信息" extra={<Text type="secondary">可编辑姓名 / 手机 / 邮箱</Text>}>
             <Form
               layout="vertical"
               form={profileForm}
@@ -294,7 +294,7 @@ const Profile: React.FC = () => {
 
           <Card
             className="profile-card"
-            bordered={false}
+            variant="borderless"
             title="修改密码"
             style={{ marginTop: 16 }}
             extra={<Text type="secondary">建议定期更新密码提升安全性</Text>}

@@ -2,7 +2,7 @@
 import React from 'react'
 import { Form, Input, Button, Card, Typography, message, Checkbox } from 'antd'
 import { LockOutlined, UserOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth'
 import http from '../../services/http'
 import './index.css'
@@ -12,8 +12,19 @@ const { Title } = Typography
 const Login: React.FC = () => {
   const [form] = Form.useForm()
   const navigate = useNavigate()
-  const { login } = useAuthStore()
+  const location = useLocation()
+  const { login, token } = useAuthStore()
   const [loading, setLoading] = React.useState(false)
+
+  const returnUrl = React.useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    const raw = params.get('returnUrl')
+    if (!raw) return '/'
+    if (!raw.startsWith('/')) return '/'
+    if (raw.startsWith('//')) return '/'
+    if (raw === '/login') return '/'
+    return raw
+  }, [location.search])
 
   React.useEffect(() => {
     const savedUsername = localStorage.getItem('admin-remembered-username')
@@ -26,6 +37,12 @@ const Login: React.FC = () => {
     // 清理旧的含密码缓存
     localStorage.removeItem('admin-remembered-credentials')
   }, [form])
+
+  React.useEffect(() => {
+    if (token) {
+      navigate(returnUrl, { replace: true })
+    }
+  }, [navigate, returnUrl, token])
 
   // 登录表单提交
   const onFinish = async (values: any) => {
@@ -45,7 +62,7 @@ const Login: React.FC = () => {
       login(token, userInfo)
       // 跳转到首页
       message.success('登录成功')
-      navigate('/')
+      navigate(returnUrl, { replace: true })
     } catch (error: any) {
       // 提取更具体的错误信息
       let errorMessage = '登录失败，请检查用户名和密码'

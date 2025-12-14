@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, Typography, Row, Col, Button, Space, Carousel, Spin, Result, Tag } from 'antd';
 import { ArrowLeftOutlined, ShoppingCartOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, CopyOutlined, WechatOutlined } from '@ant-design/icons';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { LeadForm } from '@/components/forms/LeadForm';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { Product } from '@/types/product';
@@ -157,7 +157,7 @@ const ProductDetail: React.FC = () => {
   const renderFaqs = () => {
     if (faqs.length === 0) return null;
     return (
-      <Card bordered={false} className="shadow-lg mt-8" title={<Title level={4} className="m-0">常见问题</Title>}>
+      <Card variant="borderless" className="shadow-lg mt-8" title={<Title level={4} className="m-0">常见问题</Title>}>
         <div className="space-y-4">
           {faqs.map((item) => (
             <div key={item.id}>
@@ -223,7 +223,7 @@ const ProductDetail: React.FC = () => {
         </div>
 
         {/* 产品详情卡片 */}
-        <Card bordered={false} className="shadow-lg">
+        <Card variant="borderless" className="shadow-lg">
           <Row gutter={[24, 24]}>
             {/* 产品图片 */}
               <Col xs={24} md={12}>
@@ -325,7 +325,7 @@ const ProductDetail: React.FC = () => {
         {/* 产品规格 */}
         {specificationEntries.length > 0 && (
           <Card
-            bordered={false}
+            variant="borderless"
             className="shadow-lg mt-8"
             title={<Title level={4} className="m-0">产品规格</Title>}
           >
@@ -342,7 +342,7 @@ const ProductDetail: React.FC = () => {
 
         {recommendedProducts.length > 0 && (
           <Card
-            bordered={false}
+            variant="borderless"
             className="shadow-lg mt-8"
             title={<Title level={4} className="m-0">相关推荐</Title>}
             extra={<Text type="secondary">基于同类目与浏览行为</Text>}
@@ -373,7 +373,7 @@ const ProductDetail: React.FC = () => {
 
         {/* 联系信息 */}
         <Card
-          bordered={false}
+          variant="borderless"
           className="shadow-lg mt-8 bg-blue-50"
           title={<Title level={4} className="m-0">联系我们</Title>}
         >

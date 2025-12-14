@@ -284,101 +284,112 @@ const Products: React.FC = () => {
         className="products-tabs"
         activeKey={activeTab}
         onChange={(key) => setTab(key as ProductsTabKey)}
-        destroyInactiveTabPane={false}
-      >
-        <Tabs.TabPane tab="产品列表" key="products">
-          <div className="products-filters">
-            <Space size="middle" wrap>
-              <Input.Search
-                placeholder="搜索产品名称"
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="middle"
-                style={{ width: 320, minWidth: 260 }}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onSearch={handleSearch}
+        destroyOnHidden={false}
+        items={[
+          {
+            key: 'products',
+            label: '产品列表',
+            children: (
+              <>
+                <div className="products-filters">
+                  <Space size="middle" wrap>
+                    <Space.Compact style={{ width: 320, minWidth: 260 }}>
+                      <Input
+                        placeholder="搜索产品名称"
+                        allowClear
+                        size="middle"
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        onPressEnter={handleSearch}
+                      />
+                      <Button size="middle" icon={<SearchOutlined />} onClick={handleSearch} aria-label="搜索" />
+                    </Space.Compact>
+                    <Select
+                      placeholder="选择品类"
+                      style={{ width: 180, minWidth: 160 }}
+                      value={categoryId}
+                      onChange={setCategoryId}
+                      allowClear
+                    >
+                      {categories.map((category) => (
+                        <Option key={category.id} value={category.id}>
+                          {category.name}
+                        </Option>
+                      ))}
+                    </Select>
+                    <Button
+                      type="link"
+                      icon={<TagsOutlined />}
+                      onClick={() => setTab('categories')}
+                      style={{ paddingInline: 4 }}
+                    >
+                      管理分类
+                    </Button>
+                    <Select
+                      placeholder="选择品牌"
+                      style={{ width: 180, minWidth: 160 }}
+                      value={brandId}
+                      onChange={setBrandId}
+                      allowClear
+                    >
+                      {brands.map((brand) => (
+                        <Option key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </Option>
+                      ))}
+                    </Select>
+                    <Select
+                      placeholder="选择状态"
+                      style={{ width: 160, minWidth: 140 }}
+                      value={status}
+                      onChange={setStatus}
+                      allowClear
+                    >
+                      <Option value={1}>上架</Option>
+                      <Option value={0}>下架</Option>
+                    </Select>
+                    <Button onClick={handleReset} disabled={loading}>
+                      重置
+                    </Button>
+                  </Space>
+                </div>
+
+                <Table
+                  className="products-table"
+                  columns={columns}
+                  dataSource={products}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{
+                    current: currentPage,
+                    pageSize,
+                    total,
+                    onChange: (page, nextPageSize) => {
+                      setCurrentPage(page);
+                      setPageSize(nextPageSize);
+                    },
+                    showSizeChanger: true,
+                    pageSizeOptions: ['10', '20', '50', '100'],
+                    showTotal: (totalCount, range) => `第${range[0]}-${range[1]}条，共${totalCount}条`,
+                    position: ['bottomRight'],
+                  }}
+                />
+              </>
+            ),
+          },
+          {
+            key: 'categories',
+            label: '产品分类',
+            children: (
+              <CategoriesPanel
+                onChanged={() => {
+                  refreshCategories();
+                }}
               />
-              <Select
-                placeholder="选择品类"
-                style={{ width: 180, minWidth: 160 }}
-                value={categoryId}
-                onChange={setCategoryId}
-                allowClear
-              >
-                {categories.map((category) => (
-                  <Option key={category.id} value={category.id}>
-                    {category.name}
-                  </Option>
-                ))}
-              </Select>
-              <Button
-                type="link"
-                icon={<TagsOutlined />}
-                onClick={() => setTab('categories')}
-                style={{ paddingInline: 4 }}
-              >
-                管理分类
-              </Button>
-              <Select
-                placeholder="选择品牌"
-                style={{ width: 180, minWidth: 160 }}
-                value={brandId}
-                onChange={setBrandId}
-                allowClear
-              >
-                {brands.map((brand) => (
-                  <Option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="选择状态"
-                style={{ width: 160, minWidth: 140 }}
-                value={status}
-                onChange={setStatus}
-                allowClear
-              >
-                <Option value={1}>上架</Option>
-                <Option value={0}>下架</Option>
-              </Select>
-              <Button onClick={handleReset} disabled={loading}>
-                重置
-              </Button>
-            </Space>
-          </div>
-
-          <Table
-            className="products-table"
-            columns={columns}
-            dataSource={products}
-            rowKey="id"
-            loading={loading}
-            pagination={{
-              current: currentPage,
-              pageSize,
-              total,
-              onChange: (page, nextPageSize) => {
-                setCurrentPage(page);
-                setPageSize(nextPageSize);
-              },
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: (totalCount, range) => `第${range[0]}-${range[1]}条，共${totalCount}条`,
-              position: ['bottomRight'],
-            }}
-          />
-        </Tabs.TabPane>
-
-        <Tabs.TabPane tab="产品分类" key="categories">
-          <CategoriesPanel
-            onChanged={() => {
-              refreshCategories();
-            }}
-          />
-        </Tabs.TabPane>
-      </Tabs>
+            ),
+          },
+        ]}
+      />
 
       <Modal
         title={isViewMode ? '查看产品' : currentProduct ? '编辑产品' : '新增产品'}
@@ -386,7 +397,7 @@ const Products: React.FC = () => {
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <ProductForm
           product={currentProduct}

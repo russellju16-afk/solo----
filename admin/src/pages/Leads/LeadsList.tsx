@@ -487,16 +487,17 @@ const LeadsList: React.FC = () => {
         </Form.Item>
         
         <Form.Item label="关键字">
-          <Input.Search
-            placeholder="搜索名称/公司/电话"
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="middle"
-            style={{ width: 250 }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <Space.Compact style={{ width: 250 }}>
+            <Input
+              placeholder="搜索名称/公司/电话"
+              allowClear
+              size="middle"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <Button size="middle" icon={<SearchOutlined />} onClick={handleSearch} aria-label="搜索" />
+          </Space.Compact>
         </Form.Item>
         
         <Form.Item>
@@ -536,7 +537,7 @@ const LeadsList: React.FC = () => {
         onOk={handleCompleteSave}
         okText="保存"
         confirmLoading={completeSaving}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={completeForm} layout="vertical">
           <Form.Item

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag, Skeleton } from 'antd'
 import { ArrowRightOutlined, CheckCircleOutlined, CalendarOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
-import { Helmet } from 'react-helmet'
+import { Helmet } from 'react-helmet-async'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { fetchCases } from '@/services/content'
 import type { CaseItem } from '@/types/content'
@@ -266,4 +266,3 @@ const Cases: React.FC = () => {
 }
 
 export default Cases
-

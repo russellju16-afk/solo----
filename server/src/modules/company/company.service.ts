@@ -28,6 +28,7 @@ export class CompanyService {
         website: '',
         contact_person: '',
         business_hours: '',
+        wechat_qr_code: '',
         social_media: '',
         seo_title: '',
         seo_keywords: '',
@@ -50,4 +51,3 @@ export class CompanyService {
     return this.companyRepo.save(info);
   }
 }
-

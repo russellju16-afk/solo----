@@ -9,7 +9,7 @@ import {
   AppstoreOutlined,
 } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
-import { Helmet } from 'react-helmet'
+import { Helmet } from 'react-helmet-async'
 import { fetchSolutions } from '@/services/content'
 import type { Solution } from '@/types/content'
 import { useIsMobile } from '@/hooks/useIsMobile'

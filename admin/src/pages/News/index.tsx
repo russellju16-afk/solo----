@@ -130,7 +130,7 @@ const News: React.FC = () => {
     setLoading(true);
     try {
       // 处理图片
-      const coverImage = values.cover_image && values.cover_image[0]?.url;
+      const coverImage = values.cover_image?.[0]?.url || '';
       const newsData = {
         ...values,
         cover_image: coverImage,
@@ -275,16 +275,17 @@ const News: React.FC = () => {
         style={{ marginBottom: 16 }}
       >
         <Form.Item label="搜索">
-          <Input.Search
-            placeholder="搜索新闻标题"
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="middle"
-            style={{ width: 300 }}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <Space.Compact style={{ width: 300 }}>
+            <Input
+              placeholder="搜索新闻标题"
+              allowClear
+              size="middle"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <Button size="middle" icon={<SearchOutlined />} onClick={handleSearch} aria-label="搜索" />
+          </Space.Compact>
         </Form.Item>
 
         <Form.Item label="分类">

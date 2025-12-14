@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Card, Typography, Button, Space, Tag, Spin, Result } from 'antd'
 import { ArrowLeftOutlined, CalendarOutlined } from '@ant-design/icons'
-import { Helmet } from 'react-helmet'
+import { Helmet } from 'react-helmet-async'
 import { fetchNewsDetail } from '@/services/content'
 import type { NewsItem } from '@/types/content'
 import ImageWithFallback from '@/components/ImageWithFallback'
@@ -89,7 +89,7 @@ const NewsDetail: React.FC = () => {
           </Link>
         </div>
 
-        <Card bordered={false} className="shadow-lg">
+        <Card variant="borderless" className="shadow-lg">
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <div>
               <Title level={2} className="mb-2">
@@ -123,4 +123,3 @@ const NewsDetail: React.FC = () => {
 }
 
 export default NewsDetail
-

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Card, Typography, Row, Col, Pagination, Select, Input, Button, Space, message, Spin, Tag, Drawer, Checkbox } from 'antd';
 import { SearchOutlined, ShoppingCartOutlined, CopyOutlined, AppstoreAddOutlined, FilterOutlined } from '@ant-design/icons';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { fetchProducts } from '@/services/products';
 import { fetchCategories } from '@/services/categories';
 import { Product, ProductCategory } from '@/types/product';
@@ -14,7 +14,6 @@ import ImageWithFallback from '@/components/ImageWithFallback';
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
 const { Option } = Select;
-const { Search } = Input;
 
 const ProductsList: React.FC = () => {
   const isMobile = useIsMobile();
@@ -252,15 +251,22 @@ const ProductsList: React.FC = () => {
           {isMobile ? (
             <>
               <div className="flex items-center gap-3">
-                <Search
-                  placeholder="搜索产品名称或描述"
-                  allowClear
-                  size="large"
-                  value={keyword}
-                  onSearch={handleSearch}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="flex-1"
-                />
+                <Space.Compact style={{ flex: 1 }}>
+                  <Input
+                    placeholder="搜索产品名称或描述"
+                    allowClear
+                    size="large"
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onPressEnter={() => handleSearch(keyword)}
+                  />
+                  <Button
+                    size="large"
+                    icon={<SearchOutlined />}
+                    onClick={() => handleSearch(keyword)}
+                    aria-label="搜索"
+                  />
+                </Space.Compact>
                 <Button size="large" icon={<FilterOutlined />} onClick={openFilterDrawer} aria-label="打开筛选">
                   筛选
                 </Button>
@@ -394,16 +400,22 @@ const ProductsList: React.FC = () => {
                   ))}
                 </Select>
 
-                <Search
-                  placeholder="搜索产品名称或描述"
-                  allowClear
-                  enterButton={<SearchOutlined />}
-                  size="large"
-                  value={keyword}
-                  onSearch={handleSearch}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  style={{ width: 320 }}
-                />
+                <Space.Compact style={{ width: 320 }}>
+                  <Input
+                    placeholder="搜索产品名称或描述"
+                    allowClear
+                    size="large"
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onPressEnter={() => handleSearch(keyword)}
+                  />
+                  <Button
+                    size="large"
+                    icon={<SearchOutlined />}
+                    onClick={() => handleSearch(keyword)}
+                    aria-label="搜索"
+                  />
+                </Space.Compact>
 
                 <Select
                   allowClear

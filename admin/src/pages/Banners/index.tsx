@@ -134,7 +134,7 @@ const Banners: React.FC = () => {
     setLoading(true);
     try {
       // 处理图片
-      const imageUrl = values.image_url && values.image_url[0]?.url;
+      const imageUrl = values.image_url?.[0]?.url || '';
       const bannerData = {
         ...values,
         image_url: imageUrl,
@@ -286,16 +286,17 @@ const Banners: React.FC = () => {
           </Button>
         </Space>
         <Space>
-          <Input.Search
-            placeholder="搜索标题/副标题"
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="middle"
-            style={{ width: 300 }}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            onSearch={handleSearch}
-          />
+          <Space.Compact style={{ width: 300 }}>
+            <Input
+              placeholder="搜索标题/副标题"
+              allowClear
+              size="middle"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <Button size="middle" icon={<SearchOutlined />} onClick={handleSearch} aria-label="搜索" />
+          </Space.Compact>
           <Select
             placeholder="选择位置"
             allowClear

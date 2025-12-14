@@ -160,7 +160,7 @@ const ContactWidget: React.FC = () => {
     <FloatButton.Group
       trigger="hover"
       type="primary"
-      shape="circle"
+      shape="square"
       style={{ right: 24 }}
       icon={<CustomerServiceOutlined />}
       description="联系"

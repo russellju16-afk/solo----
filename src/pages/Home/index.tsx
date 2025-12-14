@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, Carousel, Typography, Button, Row, Col, Space } from 'antd'
 import { ArrowRightOutlined, ShoppingCartOutlined, SafetyOutlined, TruckOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
-import { Helmet } from 'react-helmet'
+import { Helmet } from 'react-helmet-async'
 import { LeadForm } from '@/components/forms/LeadForm'
 import { fetchBanners, fetchCases, fetchNews } from '@/services/content'
 import type { Banner as BannerType, CaseItem, NewsItem } from '@/types/content'
@@ -237,7 +237,7 @@ const Home: React.FC = () => {
           </Title>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {features.map((feature, index) => (
-              <Card key={index} bordered={false} className="text-center hover:shadow-lg transition-shadow">
+              <Card key={index} variant="borderless" className="text-center hover:shadow-lg transition-shadow">
                 <div className="mb-6">{feature.icon}</div>
                 <Meta title={feature.title} description={feature.description} />
               </Card>

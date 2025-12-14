@@ -226,7 +226,7 @@ const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]} className="dashboard-stat-row">
         {statCards.map(stat => (
           <Col xs={24} sm={12} lg={6} key={stat.key}>
-            <Card className="stat-card" bordered={false} hoverable onClick={stat.onView}>
+            <Card className="stat-card" variant="borderless" hoverable onClick={stat.onView}>
               <div className="stat-card-header">
                 <div className="stat-card-title">
                   <span className="stat-icon">{stat.icon}</span>
@@ -256,7 +256,7 @@ const Dashboard: React.FC = () => {
       </Row>
 
       <div className="dashboard-sections">
-        <Card title="快捷操作" className="dashboard-actions-card" bordered={false}>
+        <Card title="快捷操作" className="dashboard-actions-card" variant="borderless">
           <Space wrap size={12}>
             <Button icon={<PlusOutlined />} onClick={() => navigate('/leads')}>
               新增线索
@@ -278,7 +278,7 @@ const Dashboard: React.FC = () => {
 
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={12}>
-            <Card title="最近线索" className="dashboard-list-card" bordered={false}>
+            <Card title="最近线索" className="dashboard-list-card" variant="borderless">
               <div className="dashboard-table-container">
                 <Table
                   loading={recentLeadsLoading}
@@ -342,7 +342,7 @@ const Dashboard: React.FC = () => {
           </Col>
 
           <Col xs={24} lg={12}>
-            <Card title="最近内容更新（新闻）" className="dashboard-list-card" bordered={false}>
+            <Card title="最近内容更新（新闻）" className="dashboard-list-card" variant="borderless">
               <div className="dashboard-table-container">
                 <Table
                   loading={recentNewsLoading}

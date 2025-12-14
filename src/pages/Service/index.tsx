@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Typography, Row, Col, Button, Timeline } from 'antd';
 import { ArrowRightOutlined, CheckCircleOutlined, PhoneOutlined, MailOutlined, ClockCircleOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;

@@ -200,7 +200,7 @@ const CategoriesPanel: React.FC<Props> = ({ onChanged }) => {
         }}
         footer={null}
         width={520}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ sort_order: 0 }}>
           <Form.Item
