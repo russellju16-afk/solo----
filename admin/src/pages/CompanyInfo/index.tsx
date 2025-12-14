@@ -6,7 +6,8 @@ import { UploadOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/company';
 import { uploadImage } from '../../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
-import { normalizeUploadFileList } from '../../utils/uploadForm';
+import { getSingleUploadUrl, normalizeUploadFileList, toSingleImageFileList } from '../../utils/uploadForm';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const { TextArea } = Input;
 
@@ -81,11 +82,9 @@ const CompanyInfo: React.FC = () => {
       const data = (res as any)?.data || res || {};
       form.setFieldsValue({
         ...data,
-        logo: data.logo ? [{ uid: 'logo', name: data.logo.split('/').pop(), status: 'done', url: data.logo }] : [],
-        banner_image: data.banner_image ? [{ uid: 'banner', name: data.banner_image.split('/').pop(), status: 'done', url: data.banner_image }] : [],
-        wechat_qr_code: data.wechat_qr_code
-          ? [{ uid: 'wechat', name: data.wechat_qr_code.split('/').pop(), status: 'done', url: data.wechat_qr_code }]
-          : [],
+        logo: toSingleImageFileList(data.logo, 'logo'),
+        banner_image: toSingleImageFileList(data.banner_image, 'banner'),
+        wechat_qr_code: toSingleImageFileList(data.wechat_qr_code, 'wechat'),
       });
     } catch (error) {
       message.error('获取公司信息失败');
@@ -104,9 +103,9 @@ const CompanyInfo: React.FC = () => {
     setLoading(true);
     try {
       // 处理图片
-      const logo = values.logo?.[0]?.url || '';
-      const bannerImage = values.banner_image?.[0]?.url || '';
-      const wechatQr = values.wechat_qr_code?.[0]?.url || '';
+      const logo = getSingleUploadUrl(values.logo);
+      const bannerImage = getSingleUploadUrl(values.banner_image);
+      const wechatQr = getSingleUploadUrl(values.wechat_qr_code);
       const companyData = {
         ...values,
         logo,
@@ -118,7 +117,7 @@ const CompanyInfo: React.FC = () => {
       message.success('更新成功');
     } catch (error) {
       console.error('[CompanyInfo] update error', (error as any)?.response?.data || error);
-      message.error((error as any)?.response?.data?.message || '更新失败');
+      message.error(getErrorMessage(error, '更新失败，请稍后重试'));
     } finally {
       setLoading(false);
     }

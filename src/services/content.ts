@@ -24,6 +24,10 @@ export async function fetchSolutions(
   return http.get<PaginatedResult<Solution>>('/api/solutions', { params, signal: options.signal });
 }
 
+export async function fetchSolutionDetail(id: number, options: { signal?: AbortSignal } = {}): Promise<Solution> {
+  return http.get<Solution>(`/api/solutions/${id}`, { signal: options.signal });
+}
+
 export async function fetchNews(
   params: Record<string, unknown> = {},
   options: { signal?: AbortSignal } = {},

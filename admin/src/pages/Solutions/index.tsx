@@ -6,8 +6,9 @@ import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined
 import { solutionService } from '../../services/content';
 import { uploadImage } from '../../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
-import { normalizeUploadFileList } from '../../utils/uploadForm';
+import { getSingleUploadUrl, normalizeUploadFileList, toSingleImageFileList } from '../../utils/uploadForm';
 import ImageWithFallback from '../../components/ImageWithFallback';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const { Option } = Select;
 
@@ -93,9 +94,7 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
-      cover_image: record.cover_image
-        ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }]
-        : [],
+      cover_image: toSingleImageFileList(record.cover_image, `cover-${record.id}`),
       pain_points: record.pain_points?.join('\n'),
       solutions: record.solutions?.join('\n'),
       product_ids: record.product_ids?.join(','),
@@ -108,9 +107,7 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
-      cover_image: record.cover_image
-        ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }]
-        : [],
+      cover_image: toSingleImageFileList(record.cover_image, `cover-${record.id}`),
       pain_points: record.pain_points?.join('\n'),
       solutions: record.solutions?.join('\n'),
       product_ids: record.product_ids?.join(','),
@@ -133,7 +130,7 @@ const Solutions: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      const coverImage = values.cover_image?.[0]?.url || '';
+      const coverImage = getSingleUploadUrl(values.cover_image);
       const solutionData = {
         ...values,
         cover_image: coverImage,
@@ -160,7 +157,7 @@ const Solutions: React.FC = () => {
       setIsModalVisible(false);
       fetchSolutions();
     } catch (error) {
-      message.error('操作失败');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

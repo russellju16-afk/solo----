@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Modal, message, Popconfirm, Form, InputNumber } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { categoryService } from '../../services/product';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 
 
 const ProductCategories: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<any>(null);
@@ -74,6 +76,8 @@ const ProductCategories: React.FC = () => {
 
   // 表单提交
   const onFinish = async (values: any) => {
+    if (saving) return
+    setSaving(true);
     try {
       if (currentCategory) {
         // 更新分类
@@ -87,7 +91,9 @@ const ProductCategories: React.FC = () => {
       setIsModalVisible(false);
       fetchCategories();
     } catch (error) {
-      message.error('操作失败');
+      message.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -219,7 +225,7 @@ const ProductCategories: React.FC = () => {
           
           <Form.Item style={{ marginTop: 24 }}>
             <Space>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={saving} disabled={saving}>
                 提交
               </Button>
               <Button htmlType="reset">重置</Button>

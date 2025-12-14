@@ -7,6 +7,7 @@ import { productService } from '../services/product';
 import { uploadImage } from '../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../utils/upload';
 import { normalizeUploadFileList } from '../utils/uploadForm';
+import { getErrorMessage } from '../utils/errorMessage';
 
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -109,7 +110,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       // 提交成功回调
       onSuccess();
     } catch (error) {
-      message.error('操作失败');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

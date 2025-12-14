@@ -6,6 +6,7 @@ import Home from './pages/Home/index'
 const ProductsList = lazy(() => import('./pages/Products/List/index'))
 const ProductDetail = lazy(() => import('./pages/Products/Detail/index'))
 const Solutions = lazy(() => import('./pages/Solutions/index'))
+const SolutionDetail = lazy(() => import('./pages/Solutions/Detail/index'))
 const Service = lazy(() => import('./pages/Service/index'))
 const Cases = lazy(() => import('./pages/Cases/index'))
 const CaseDetail = lazy(() => import('./pages/Cases/Detail/index'))
@@ -23,6 +24,7 @@ function App() {
           <Route path="/products" element={<ProductsList />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/solutions" element={<Solutions />} />
+          <Route path="/solutions/:id" element={<SolutionDetail />} />
           <Route path="/service" element={<Service />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:id" element={<CaseDetail />} />

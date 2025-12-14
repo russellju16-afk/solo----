@@ -9,6 +9,7 @@ import type { NewsItem } from '@/types/content'
 import ImageWithFallback from '@/components/ImageWithFallback'
 import PageEmpty from '@/components/PageEmpty'
 import PageSkeleton from '@/components/PageSkeleton'
+import ErrorState from '@/components/ErrorState'
 
 const { Title, Paragraph, Text } = Typography
 const { Meta } = Card
@@ -119,18 +120,13 @@ const News: React.FC = () => {
             <PageSkeleton variant="cards" count={pageSize} />
           )
         ) : rows.length === 0 && loadError ? (
-          <PageEmpty
-            title="加载失败"
+          <ErrorState
             description={loadError}
-            actions={
-              <Space>
-                <Button type="primary" onClick={() => setReloadSeq((v) => v + 1)}>
-                  重试
-                </Button>
-                <Link to="/contact#quote">
-                  <Button>获取报价</Button>
-                </Link>
-              </Space>
+            onRetry={() => setReloadSeq((v) => v + 1)}
+            extraActions={
+              <Link to="/contact#quote">
+                <Button>获取报价</Button>
+              </Link>
             }
           />
         ) : rows.length === 0 ? (

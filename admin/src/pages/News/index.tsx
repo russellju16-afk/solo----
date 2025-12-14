@@ -7,8 +7,9 @@ import { newsService } from '../../services/content';
 import { uploadImage } from '../../services/upload';
 import dayjs from 'dayjs';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
-import { normalizeUploadFileList } from '../../utils/uploadForm';
+import { getSingleUploadUrl, normalizeUploadFileList, toSingleImageFileList } from '../../utils/uploadForm';
 import ImageWithFallback from '../../components/ImageWithFallback';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -98,7 +99,7 @@ const News: React.FC = () => {
     form.setFieldsValue({
       ...record,
       published_at: record.published_at ? dayjs(record.published_at) : null,
-      cover_image: record.cover_image ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }] : [],
+      cover_image: toSingleImageFileList(record.cover_image, `cover-${record.id}`),
     });
     setIsModalVisible(true);
   };
@@ -109,7 +110,7 @@ const News: React.FC = () => {
     form.setFieldsValue({
       ...record,
       published_at: record.published_at ? dayjs(record.published_at) : null,
-      cover_image: record.cover_image ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }] : [],
+      cover_image: toSingleImageFileList(record.cover_image, `cover-${record.id}`),
     });
     setIsModalVisible(true);
   };
@@ -130,7 +131,7 @@ const News: React.FC = () => {
     setLoading(true);
     try {
       // 处理图片
-      const coverImage = values.cover_image?.[0]?.url || '';
+      const coverImage = getSingleUploadUrl(values.cover_image);
       const newsData = {
         ...values,
         cover_image: coverImage,
@@ -149,7 +150,7 @@ const News: React.FC = () => {
       setIsModalVisible(false);
       fetchNews();
     } catch (error) {
-      message.error('操作失败');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

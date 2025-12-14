@@ -1,5 +1,15 @@
 import { AUTH_TOKEN_KEY, LEGACY_TOKEN_KEYS } from '../constants/auth'
 
+function normalizeToken(raw: string | null) {
+  if (!raw) return null
+  const token = raw.trim()
+  if (!token) return null
+  if (token === 'null' || token === 'undefined') return null
+  // Basic JWT shape check: header.payload.signature (at least 2 dots)
+  if (token.split('.').length < 3) return null
+  return token
+}
+
 export function migrateLegacyToken() {
   const legacy = LEGACY_TOKEN_KEYS.map((key) => localStorage.getItem(key)).find(Boolean)
   if (legacy) {
@@ -12,13 +22,24 @@ export function migrateLegacyToken() {
 }
 
 export function getStoredToken() {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY)
-  if (token) return token
-  return migrateLegacyToken()
+  const stored = normalizeToken(localStorage.getItem(AUTH_TOKEN_KEY))
+  if (stored) return stored
+
+  const legacy = migrateLegacyToken()
+  const normalizedLegacy = normalizeToken(legacy)
+  if (!normalizedLegacy && legacy) {
+    clearStoredToken('invalid legacy token in storage')
+  }
+  return normalizedLegacy
 }
 
 export function setStoredToken(token: string) {
-  localStorage.setItem(AUTH_TOKEN_KEY, token)
+  const normalized = normalizeToken(token)
+  if (!normalized) {
+    clearStoredToken('setStoredToken received invalid token')
+    return
+  }
+  localStorage.setItem(AUTH_TOKEN_KEY, normalized)
   LEGACY_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key))
 }
 
@@ -31,4 +52,3 @@ export function clearStoredToken(reason: string) {
 export function isAuthenticated() {
   return !!getStoredToken()
 }
-

@@ -28,8 +28,17 @@ type HttpClient = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | 'patch
   patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
 }
 
-// 避免重复弹出 401 提示
-let isHandlingUnauthorized = false
+// 避免并发 401 触发多次提示/跳转
+const UNAUTHORIZED_COOLDOWN_MS = 5000
+let unauthorizedCooldownUntil = 0
+
+function canHandleUnauthorized() {
+  return Date.now() >= unauthorizedCooldownUntil
+}
+
+function beginUnauthorizedCooldown() {
+  unauthorizedCooldownUntil = Date.now() + UNAUTHORIZED_COOLDOWN_MS
+}
 
 // 请求拦截器
 http.interceptors.request.use(
@@ -58,7 +67,6 @@ http.interceptors.response.use(
       const { status, data } = error.response
       const serverMessage = data?.message
       const requestUrl = error.config?.url || ''
-      const token = readToken()
       const isLoginApi = requestUrl.includes('/auth/login')
       const isAdminApi = requestUrl.includes('/admin/')
 
@@ -66,19 +74,15 @@ http.interceptors.response.use(
         const { logout } = useAuthStore.getState()
         if (isLoginApi) {
           console.warn('[Auth] 401 from login api, skip auto logout', requestUrl)
-        } else if (token && isAdminApi && !isHandlingUnauthorized) {
-          isHandlingUnauthorized = true
+        } else if (isAdminApi && canHandleUnauthorized()) {
+          beginUnauthorizedCooldown()
           console.warn('[Auth] 401 from', requestUrl, '- will logout')
           message.error(serverMessage || '登录状态已过期，请重新登录')
           logout(`收到 401，来自 ${requestUrl}`)
           redirectToLogin(`收到 401，来自 ${requestUrl}`)
-          setTimeout(() => {
-            isHandlingUnauthorized = false
-          }, 1500)
         } else {
           console.warn('[Auth] 401 ignored', {
             requestUrl,
-            hasToken: !!token,
             isAdminApi,
           })
         }

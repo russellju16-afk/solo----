@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import PageEmpty from '@/components/PageEmpty';
 import PageSkeleton from '@/components/PageSkeleton';
+import ErrorState from '@/components/ErrorState';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -474,18 +475,13 @@ const ProductsList: React.FC = () => {
         {loading && products.length === 0 ? (
           <PageSkeleton variant="cards" count={pageSize} />
         ) : loadError && products.length === 0 ? (
-          <PageEmpty
-            title="加载失败"
+          <ErrorState
             description={loadError}
-            actions={
-              <Space>
-                <Button type="primary" onClick={loadProducts}>
-                  重试
-                </Button>
-                <Link to="/contact#quote">
-                  <Button>获取报价</Button>
-                </Link>
-              </Space>
+            onRetry={loadProducts}
+            extraActions={
+              <Link to="/contact#quote">
+                <Button>获取报价</Button>
+              </Link>
             }
           />
         ) : products.length === 0 ? (

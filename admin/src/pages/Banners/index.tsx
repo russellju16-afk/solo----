@@ -6,8 +6,9 @@ import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined
 import { bannerService } from '../../services/content';
 import { uploadImage } from '../../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
-import { normalizeUploadFileList } from '../../utils/uploadForm';
+import { getSingleUploadUrl, normalizeUploadFileList, toSingleImageFileList } from '../../utils/uploadForm';
 import ImageWithFallback from '../../components/ImageWithFallback';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 const { Option } = Select;
 
@@ -92,7 +93,7 @@ const Banners: React.FC = () => {
     setCurrentBanner(record);
     form.setFieldsValue({
       ...record,
-      image_url: record.image_url ? [{ uid: '1', name: record.image_url.split('/').pop(), status: 'done', url: record.image_url }] : [],
+      image_url: toSingleImageFileList(record.image_url, `banner-${record.id || 'current'}`),
     });
     setIsModalVisible(true);
   };
@@ -102,7 +103,7 @@ const Banners: React.FC = () => {
     setCurrentBanner(record);
     form.setFieldsValue({
       ...record,
-      image_url: record.image_url ? [{ uid: '1', name: record.image_url.split('/').pop(), status: 'done', url: record.image_url }] : [],
+      image_url: toSingleImageFileList(record.image_url, `banner-${record.id || 'current'}`),
     });
     setIsModalVisible(true);
   };
@@ -134,7 +135,7 @@ const Banners: React.FC = () => {
     setLoading(true);
     try {
       // 处理图片
-      const imageUrl = values.image_url?.[0]?.url || '';
+      const imageUrl = getSingleUploadUrl(values.image_url);
       const bannerData = {
         ...values,
         image_url: imageUrl,
@@ -156,7 +157,7 @@ const Banners: React.FC = () => {
       setIsModalVisible(false);
       fetchBanners();
     } catch (error) {
-      message.error('操作失败');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

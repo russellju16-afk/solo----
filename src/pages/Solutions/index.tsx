@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import PageEmpty from '@/components/PageEmpty'
 import PageSkeleton from '@/components/PageSkeleton'
 import ImageWithFallback from '@/components/ImageWithFallback'
+import ErrorState from '@/components/ErrorState'
 
 const { Title, Paragraph } = Typography
 const { Meta } = Card
@@ -137,18 +138,13 @@ const Solutions: React.FC = () => {
         {loading && rows.length === 0 ? (
           <PageSkeleton variant="cards" count={pageSize} className="grid grid-cols-1 md:grid-cols-2 gap-6" />
         ) : rows.length === 0 && loadError ? (
-          <PageEmpty
-            title="加载失败"
+          <ErrorState
             description={loadError}
-            actions={
-              <Space>
-                <Button type="primary" onClick={() => setReloadSeq((v) => v + 1)}>
-                  重试
-                </Button>
-                <Link to="/contact#quote">
-                  <Button>获取报价</Button>
-                </Link>
-              </Space>
+            onRetry={() => setReloadSeq((v) => v + 1)}
+            extraActions={
+              <Link to="/contact#quote">
+                <Button>获取报价</Button>
+              </Link>
             }
           />
         ) : rows.length === 0 ? (
@@ -210,11 +206,18 @@ const Solutions: React.FC = () => {
                               暂无要点内容，请在后台完善该解决方案详情。
                             </Paragraph>
                           )}
-                          <Link to="/contact">
-                            <Button type="link" icon={<ArrowRightOutlined />} className="p-0">
-                              了解更多
-                            </Button>
-                          </Link>
+                          <Space size={12} wrap>
+                            <Link to={`/solutions/${solution.id}`}>
+                              <Button type="link" icon={<ArrowRightOutlined />} className="p-0">
+                                查看详情
+                              </Button>
+                            </Link>
+                            <Link to="/contact#quote">
+                              <Button type="link" className="p-0">
+                                获取报价
+                              </Button>
+                            </Link>
+                          </Space>
                         </div>
                       }
                     />

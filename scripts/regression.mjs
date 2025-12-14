@@ -5,6 +5,8 @@ import { chromium } from 'playwright'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const RUN_ID = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+
 const WEB_BASE_URL = process.env.WEB_BASE_URL || 'http://localhost:3000'
 const ADMIN_BASE_URL = process.env.ADMIN_BASE_URL || 'http://localhost:5173'
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
@@ -61,6 +63,20 @@ function attachCollector(page) {
   }
 
   return { consoleErrors, pageErrors, requestFailures, badResponses, reset }
+}
+
+async function ensureArtifactsDir(subdir = '') {
+  const fs = await import('node:fs/promises')
+  const dir = path.resolve(__dirname, '../logs', 'artifacts', `regression-${RUN_ID}`, subdir)
+  await fs.mkdir(dir, { recursive: true })
+  return dir
+}
+
+async function takeScreenshot(page, filename, options = {}) {
+  const dir = await ensureArtifactsDir()
+  const filePath = path.join(dir, filename)
+  await page.screenshot({ path: filePath, ...options })
+  return filePath
 }
 
 async function gotoAndSettle(page, url, settleMs = 1200) {
@@ -122,6 +138,99 @@ async function ensureListToDetail(page, listPath, linkSelector, detailPathRegex)
   return { hadDetail: false }
 }
 
+async function ensureListSkeleton(page, routePath, apiPathPattern) {
+  await page.route(apiPathPattern, async (route) => {
+    await new Promise((r) => setTimeout(r, 1200))
+    try {
+      await route.continue()
+    } catch {
+      // If the route is already handled (e.g. page navigated/unrouted), ignore.
+    }
+  })
+
+  await gotoAndSettle(page, normalizeUrl(WEB_BASE_URL, routePath), 200)
+  const skeleton = page.locator('.ant-skeleton')
+  await skeleton.first().waitFor({ timeout: 5000 })
+  // Give the delayed request a chance to be continued before unroute, avoiding "Route is already handled!".
+  await page.waitForTimeout(1400)
+  await page.unroute(apiPathPattern)
+}
+
+async function ensureListEmptyState(page, routePath, apiPathPattern, expectedCtas = []) {
+  await page.route(apiPathPattern, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [], total: 0 }),
+    })
+  })
+
+  await gotoAndSettle(page, normalizeUrl(WEB_BASE_URL, routePath), 1200)
+  await page.locator('.ant-empty').first().waitFor({ timeout: 5000 })
+
+  for (const label of expectedCtas) {
+    const btn = page.getByRole('button', { name: label }).first()
+    await btn.waitFor({ timeout: 5000 })
+  }
+
+  await page.unroute(apiPathPattern)
+}
+
+async function exerciseProductFiltersDesktop(page) {
+  await gotoAndSettle(page, normalizeUrl(WEB_BASE_URL, '/products'), 1600)
+  await takeScreenshot(page, 'web-products-desktop.png', { fullPage: true })
+
+  const keywordInput = page.getByPlaceholder('搜索产品名称或描述').first()
+  await keywordInput.waitFor()
+  const keyword = `__no_such_keyword_${Date.now()}__`
+  await keywordInput.fill(keyword)
+  await page.getByRole('button', { name: '搜索' }).first().click()
+  await page.waitForTimeout(900)
+
+  // 验证 URL 同步（不依赖后端数据）
+  const url = new URL(page.url())
+  if (!url.searchParams.get('keyword')) {
+    throw new Error('expected keyword query param after search')
+  }
+
+  // 如果为空，应该有 CTA；如果不为空，也至少不应报错
+  const empty = page.getByText('未找到符合条件的产品').first()
+  if (await empty.count()) {
+    await page.getByRole('button', { name: '清空条件' }).first().waitFor({ timeout: 8000 })
+    await page.getByRole('button', { name: '返回全部' }).first().waitFor({ timeout: 8000 })
+    await page.getByRole('button', { name: '去获取报价' }).first().waitFor({ timeout: 8000 })
+
+    // 只点一个动作即可，避免清空后空态消失导致按钮不可点
+    await page.getByRole('button', { name: '清空条件' }).first().click()
+    await page.waitForTimeout(800)
+  }
+}
+
+async function exerciseProductFiltersMobile(page) {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await gotoAndSettle(page, normalizeUrl(WEB_BASE_URL, '/products'), 1600)
+  await takeScreenshot(page, 'web-products-mobile.png', { fullPage: true })
+
+  const filterButton = page.getByRole('button', { name: '筛选' }).first()
+  await filterButton.waitFor()
+  await filterButton.click()
+
+  // Drawer 打开
+  const drawer = page.locator('.ant-drawer').filter({ hasText: '筛选' }).first()
+  await drawer.waitFor({ state: 'visible', timeout: 5000 })
+  await takeScreenshot(page, 'web-products-mobile-filter-drawer.png', { fullPage: true })
+
+  await drawer.getByRole('button', { name: '应用筛选' }).first().click()
+  // antd Drawer may keep the container visible while animating; wait for mask to disappear instead.
+  await page.keyboard.press('Escape')
+  const mask = page.locator('.ant-drawer-mask').first()
+  if (await mask.count()) {
+    await mask.waitFor({ state: 'hidden', timeout: 8000 }).catch(async () => {
+      await mask.waitFor({ state: 'detached', timeout: 8000 })
+    })
+  }
+}
+
 async function submitContactLead(page) {
   await gotoAndSettle(page, normalizeUrl(WEB_BASE_URL, '/contact'), 1400)
 
@@ -148,8 +257,17 @@ async function submitContactLead(page) {
     await page.waitForTimeout(250)
   }
 
+  const selectedPath = await cityItem.locator('.ant-select-selection-item').first().textContent()
+  if (!selectedPath || selectedPath.split('/').length < 4) {
+    throw new Error(`expected cascader depth >= 4, got: ${selectedPath}`)
+  }
+
+  // required: interested categories + monthly volume
+  await page.getByRole('checkbox', { name: '大米' }).first().check()
+  await page.getByRole('radio', { name: '小于 5 吨' }).first().click()
+
   await page.getByRole('button', { name: '获取报价' }).first().click()
-  await page.waitForTimeout(1200)
+  await page.getByText('提交成功').first().waitFor({ timeout: 8000 })
 }
 
 async function initCompanyInfoTemplate(page) {
@@ -228,6 +346,10 @@ async function createNewsWithCoverAndDelete(page) {
   await modal.locator('button[type="submit"]').click()
   await modal.waitFor({ state: 'hidden' })
 
+  // 刷新确认记录持久化
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(1200)
+
   const row = page.locator('tr').filter({ hasText: title }).first()
   await row.waitFor({ timeout: 20000 })
 
@@ -245,8 +367,15 @@ async function createNewsWithCoverAndDelete(page) {
   await editModal.locator('button[type="submit"]').click()
   await editModal.waitFor({ state: 'hidden' })
 
+  // 刷新确认封面清空持久化
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(1200)
+
+  const rowAfterReload = page.locator('tr').filter({ hasText: title }).first()
+  await rowAfterReload.waitFor({ timeout: 20000 })
+
   // 再次编辑确认封面已清空
-  await row.getByRole('button', { name: '编辑' }).click()
+  await rowAfterReload.getByRole('button', { name: '编辑' }).click()
   const editModal2 = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '编辑新闻' }) }).last()
   await editModal2.waitFor({ state: 'visible' })
   if (await editModal2.locator('.ant-upload-list-item').count()) {
@@ -276,11 +405,33 @@ async function main() {
 
       await ensureListToDetail(page, '/news', 'a[href^="/news/"]:not([href="/news"])', /\/news\/\d+/)
       await ensureListToDetail(page, '/cases', 'a[href^="/cases/"]:not([href="/cases"])', /\/cases\/\d+/)
+      await ensureListToDetail(page, '/solutions', 'a[href^="/solutions/"]:not([href="/solutions"])', /\/solutions\/\d+/)
       await ensureListToDetail(page, '/products', 'a[href^="/products/"]:not([href="/products"])', /\/products\/\d+/)
 
+      await exerciseProductFiltersDesktop(page)
       await submitContactLead(page)
 
       results.push({ label: 'web-regression', ...collector })
+      await page.close()
+    }
+
+    // Web: verify skeleton & empty states (force)
+    {
+      const page = await context.newPage()
+      const collector = attachCollector(page)
+
+      await ensureListSkeleton(page, '/news', '**/api/news**')
+      await ensureListSkeleton(page, '/cases', '**/api/cases**')
+      await ensureListSkeleton(page, '/solutions', '**/api/solutions**')
+
+      await ensureListEmptyState(page, '/news', '**/api/news**', ['获取报价'])
+      await ensureListEmptyState(page, '/cases', '**/api/cases**', ['获取报价'])
+      await ensureListEmptyState(page, '/solutions', '**/api/solutions**', ['获取报价'])
+      await ensureListEmptyState(page, '/products', '**/api/products**', ['清空条件', '返回全部', '去获取报价'])
+
+      await exerciseProductFiltersMobile(page)
+
+      results.push({ label: 'web-states', ...collector })
       await page.close()
     }
 
@@ -292,6 +443,20 @@ async function main() {
       await loginAdmin(page)
       await forceAdmin401ReturnUrlFlow(page)
       collector.reset()
+
+      // 2 minutes rapid menu switch should not redirect to /login
+      const adminRoutes = ['/', '/leads', '/products', '/news', '/cases', '/solutions', '/banners', '/company-info']
+      const endAt = Date.now() + 120000
+      let index = 0
+      while (Date.now() < endAt) {
+        const target = adminRoutes[index % adminRoutes.length]
+        await gotoAndSettle(page, normalizeUrl(ADMIN_BASE_URL, target), 650)
+        const current = new URL(page.url())
+        if (current.pathname === '/login') {
+          throw new Error(`unexpected redirect to /login during admin navigation, last=${target}`)
+        }
+        index += 1
+      }
 
       await initCompanyInfoTemplate(page)
       await createNewsWithCoverAndDelete(page)
@@ -313,7 +478,7 @@ async function main() {
       item.badResponses.length
   )
 
-  console.log(JSON.stringify({ hasIssues, results }, null, 2))
+  console.log(JSON.stringify({ hasIssues, runId: RUN_ID, results }, null, 2))
   process.exitCode = hasIssues ? 1 : 0
 }
 
