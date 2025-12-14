@@ -5,9 +5,11 @@ import { SearchOutlined, ShoppingCartOutlined, CopyOutlined, AppstoreAddOutlined
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { fetchProducts } from '@/services/products';
-import { Product } from '@/types/product';
+import { fetchCategories } from '@/services/categories';
+import { Product, ProductCategory } from '@/types/product';
 import { track } from '@/utils/track';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import ImageWithFallback from '@/components/ImageWithFallback';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -20,6 +22,8 @@ const ProductsList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1);
   const [pageSize, setPageSize] = useState(() => Number(searchParams.get('pageSize')) || 6);
   const [categoryId, setCategoryId] = useState<number | undefined>(() => {
@@ -47,14 +51,22 @@ const ProductsList: React.FC = () => {
   const [draftPresetName, setDraftPresetName] = useState<string | undefined>();
 
   const categoryOptions = useMemo(() => {
-    const options = new Map<number, string>();
-    products.forEach((product) => {
-      if (product.category?.id && product.category?.name) {
-        options.set(product.category.id, product.category.name);
-      }
-    });
-    return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
-  }, [products]);
+    return categories.map((category) => ({ value: category.id, label: category.name }));
+  }, [categories]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoadingCategories(true);
+    fetchCategories({}, { signal: controller.signal })
+      .then((rows) => setCategories(Array.isArray(rows) ? rows : []))
+      .catch(() => setCategories([]))
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingCategories(false);
+        }
+      });
+    return () => controller.abort();
+  }, []);
 
   const persistPresets = (presets: { name: string; categoryId?: number; keyword: string }[]) => {
     setFilterPresets(presets);
@@ -333,6 +345,7 @@ const ProductsList: React.FC = () => {
                       value={draftCategoryId}
                       onChange={(value) => setDraftCategoryId(value)}
                       allowClear
+                      loading={loadingCategories}
                     >
                       {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
                       {categoryOptions.map((cat) => (
@@ -373,6 +386,7 @@ const ProductsList: React.FC = () => {
                   value={categoryId}
                   onChange={handleCategoryChange}
                   allowClear
+                  loading={loadingCategories}
                 >
                   {categoryOptions.length === 0 && <Option key="all" value={undefined}>全部类别</Option>}
                   {categoryOptions.map((cat) => (
@@ -436,52 +450,54 @@ const ProductsList: React.FC = () => {
         {/* 产品列表 */}
         <Spin spinning={loading} tip="加载产品中...">
           <Row gutter={[16, 16]}>
-	            {products.map(product => (
-	              <Col key={product.id} xs={24} sm={12} md={8}>
-	                <Card
-	                  hoverable
-	                  cover={
-	                    <img
-	                      alt={product.name}
-	                      src={product.images?.[0]?.url || 'https://via.placeholder.com/300x200/FFFFFF/333333?text=%E4%BA%A7%E5%93%81'}
-	                      className="w-full h-[160px] sm:h-[200px] object-cover"
-	                    />
-	                  }
-	                  extra={(
-	                    <Checkbox
-	                      checked={selectedProductIds.has(product.id)}
-	                      onChange={() => toggleSelectProduct(product.id)}
-	                    >
-	                      对比
-	                    </Checkbox>
-	                  )}
-	                  actions={
-	                    isMobile
-	                      ? [
-	                        <Button type="primary" size="small" onClick={() => navigate(`/products/${product.id}`)} key="quote">
-	                          咨询报价
-	                        </Button>,
-	                        <Link to={`/products/${product.id}`} key="detail">
-	                          <Button type="link">查看详情</Button>
-	                        </Link>,
-	                      ]
-	                      : [
-	                        <ShoppingCartOutlined key="add" />,
-	                        <Link to={`/products/${product.id}`} key="detail">
-	                          <Button type="link">查看详情</Button>
-	                        </Link>,
-	                      ]
-	                  }
-	                >
-	                  <Meta
-	                    title={
-	                      <div className="flex items-start justify-between gap-2">
-	                        <span className={isMobile ? 'block cq-clamp-2' : ''}>{product.name}</span>
-	                        {product.price && (
-	                          <Tag color="red">¥{product.price}</Tag>
-	                        )}
-	                      </div>
-	                    }
+              {products.map(product => (
+                <Col key={product.id} xs={24} sm={12} md={8}>
+                  <Card
+                    hoverable
+                    cover={
+                      <ImageWithFallback
+                        alt={product.name}
+                        src={product.cover_image || product.images?.[0]?.url}
+                        fallback="/assets/placeholder-product.webp"
+                        className="w-full h-[160px] sm:h-[200px] object-cover"
+                        loading="lazy"
+                      />
+                    }
+                    extra={(
+                      <Checkbox
+                        checked={selectedProductIds.has(product.id)}
+                        onChange={() => toggleSelectProduct(product.id)}
+                      >
+                        对比
+                      </Checkbox>
+                    )}
+                    actions={
+                      isMobile
+                        ? [
+                          <Button type="primary" size="small" onClick={() => navigate(`/products/${product.id}`)} key="quote">
+                            咨询报价
+                          </Button>,
+                          <Link to={`/products/${product.id}`} key="detail">
+                            <Button type="link">查看详情</Button>
+                          </Link>,
+                        ]
+                        : [
+                          <ShoppingCartOutlined key="add" />,
+                          <Link to={`/products/${product.id}`} key="detail">
+                            <Button type="link">查看详情</Button>
+                          </Link>,
+                        ]
+                    }
+                  >
+                    <Meta
+                      title={
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={isMobile ? 'block cq-clamp-2' : ''}>{product.name}</span>
+                          {product.price && (
+                            <Tag color="red">¥{product.price}</Tag>
+                          )}
+                        </div>
+                      }
                     description={
                       <>
                         <Paragraph ellipsis={{ rows: 2 }}>{product.description || '暂无产品描述'}</Paragraph>

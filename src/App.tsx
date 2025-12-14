@@ -8,7 +8,9 @@ const ProductDetail = lazy(() => import('./pages/Products/Detail/index'))
 const Solutions = lazy(() => import('./pages/Solutions/index'))
 const Service = lazy(() => import('./pages/Service/index'))
 const Cases = lazy(() => import('./pages/Cases/index'))
+const CaseDetail = lazy(() => import('./pages/Cases/Detail/index'))
 const News = lazy(() => import('./pages/News/index'))
+const NewsDetail = lazy(() => import('./pages/News/Detail/index'))
 const About = lazy(() => import('./pages/About/index'))
 const Contact = lazy(() => import('./pages/Contact/index'))
 
@@ -23,7 +25,9 @@ function App() {
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/service" element={<Service />} />
           <Route path="/cases" element={<Cases />} />
+          <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/news" element={<News />} />
+          <Route path="/news/:id" element={<NewsDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/analytics" element={<Navigate to="/" replace />} />

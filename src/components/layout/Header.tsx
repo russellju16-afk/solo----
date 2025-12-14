@@ -3,30 +3,30 @@ import { Link, useLocation } from 'react-router-dom'
 import { Drawer } from 'antd'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
+const NAV_ITEMS = [
+  { label: '首页', path: '/' },
+  { label: '产品中心', path: '/products' },
+  { label: '解决方案', path: '/solutions' },
+  { label: '服务能力', path: '/service' },
+  { label: '客户案例', path: '/cases' },
+  { label: '新闻资讯', path: '/news' },
+  { label: '关于我们', path: '/about' },
+  { label: '联系我们', path: '/contact' },
+]
+
 const Header: React.FC = () => {
   const isMobile = useIsMobile()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const location = useLocation()
-
-  const navItems = [
-    { label: '首页', path: '/' },
-    { label: '产品中心', path: '/products' },
-    { label: '解决方案', path: '/solutions' },
-    { label: '服务能力', path: '/service' },
-    { label: '客户案例', path: '/cases' },
-    { label: '新闻资讯', path: '/news' },
-    { label: '关于我们', path: '/about' },
-    { label: '联系我们', path: '/contact' },
-  ]
 
   const handleDrawerClose = () => setIsDrawerOpen(false)
 
   const activePath = useMemo(() => {
     const pathname = location.pathname
     if (pathname === '/') return '/'
-    const match = navItems.find((item) => item.path !== '/' && pathname.startsWith(item.path))
+    const match = NAV_ITEMS.find((item) => item.path !== '/' && pathname.startsWith(item.path))
     return match?.path || pathname
-  }, [location.pathname, navItems])
+  }, [location.pathname])
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -39,7 +39,7 @@ const Header: React.FC = () => {
 
           {/* PC Navigation */}
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-[15px]">
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -111,7 +111,7 @@ const Header: React.FC = () => {
         }
       >
         <nav className="space-y-4 mt-4">
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <Link
               key={item.path}
               to={item.path}

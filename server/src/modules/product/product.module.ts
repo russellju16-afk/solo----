@@ -10,6 +10,7 @@ import { ProductCategoryService } from './product-category.service';
 import { ProductCategoryController } from './product-category.controller';
 import { ProductBrandService } from './product-brand.service';
 import { ProductBrandController } from './product-brand.controller';
+import { ProductPublicCategoryController } from './product-public-category.controller';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ProductBrandController } from './product-brand.controller';
     ProductController,
     ProductCategoryController,
     ProductBrandController,
+    ProductPublicCategoryController,
   ],
   providers: [
     ProductService,

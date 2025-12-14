@@ -12,6 +12,8 @@ build/
 server/dist/
 server/solo_website.db
 server/backups/
+server/uploads/
+uploads/
 
 # 后端环境变量
 server/.env

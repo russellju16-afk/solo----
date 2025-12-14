@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
+import type { UploadProps } from 'antd';
 import { Form, Input, Select, Upload, Button, Space, Tabs, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { productService } from '../services/product';
+import { uploadImage } from '../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../utils/upload';
+import { normalizeUploadFileList } from '../utils/uploadForm';
 
 const { Option } = Select;
 const { TabPane } = Tabs;
@@ -41,7 +44,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState<any[]>([]);
+  const imageFileList = Form.useWatch('images', form) || [];
 
   // 初始化表单数据
   useEffect(() => {
@@ -58,44 +61,34 @@ const ProductForm: React.FC<ProductFormProps> = ({
           url: img.url,
         })) || [],
       });
-      setImages(product.images || []);
     } else {
       form.resetFields();
-      setImages([]);
     }
   }, [product, form]);
 
-  // 图片上传处理
-  const handleUploadChange = (info: any) => {
-    let fileList = [...info.fileList];
-    
-    // 只保留最新的10张图片
-    fileList = fileList.slice(-10);
-    
-    // 处理上传状态
-    fileList = fileList.map((file: any) => {
-      if (file.response) {
-        // 上传成功
-        return {
-          uid: file.uid,
-          name: file.name,
-          status: 'done',
-          url: file.response.url,
-        };
-      }
-      return file;
-    });
-    
-    // 更新表单字段
-    form.setFieldsValue({ images: fileList });
+  const imageUploadRequest: UploadProps['customRequest'] = async ({ file, onSuccess, onError, onProgress }) => {
+    try {
+      const resp = await uploadImage(file as File, {
+        onProgress: (percent) => onProgress?.({ percent }, file as any),
+      });
+      onSuccess?.(resp as any);
+    } catch (error) {
+      onError?.(error as any);
+    }
   };
 
   // 表单提交
   const onFinish = async (values: any) => {
+    const imagesUploading = values.images?.some((img: any) => img.status === 'uploading');
+    if (imagesUploading) {
+      message.warning('图片上传中，请稍后再提交');
+      return;
+    }
+
     setLoading(true);
     try {
       // 处理图片数据
-      const imageUrls = values.images
+      const imageUrls = (values.images || [])
         .filter((img: any) => img.status === 'done')
         .map((img: any) => img.url);
       
@@ -266,6 +259,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Form.Item
             name="images"
             label="产品图片"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 10 })}
           >
             <Upload
               name="file"
@@ -273,12 +268,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               className="avatar-uploader"
               showUploadList
               accept={IMAGE_ACCEPT}
-              action="https://run.mocky.io/v3/435e224c-44fb-4773-9faf-380c5e6a2188"
-              onChange={handleUploadChange}
+              customRequest={imageUploadRequest}
+              maxCount={10}
               disabled={isViewMode}
               beforeUpload={(file) => validateImageBeforeUpload(file, 5)} // 图片安全限制
             >
-              {images.length < 10 && !isViewMode && (
+              {imageFileList.length < 10 && !isViewMode && (
                 <div>
                   <PlusOutlined />
                   <div style={{ marginTop: 8 }}>上传</div>

@@ -11,8 +11,9 @@ import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 import { signalLead, track } from '@/utils/track'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useNavigate } from 'react-router-dom'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
-const CONTACT_PRESET_QR = 'https://via.placeholder.com/240x240.png?text=WeChat'
+const CONTACT_PRESET_QR = '/assets/placeholder-qr.webp'
 
 const ContactWidget: React.FC = () => {
   const isMobile = useIsMobile()
@@ -126,9 +127,10 @@ const ContactWidget: React.FC = () => {
             <div style={{ textAlign: 'center' }}>
               <Typography.Text type="secondary">长按二维码保存或添加微信</Typography.Text>
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>
-                <img
+                <ImageWithFallback
                   src={wechatQr}
                   alt="微信二维码"
+                  fallback={CONTACT_PRESET_QR}
                   style={{
                     width: 240,
                     height: 240,

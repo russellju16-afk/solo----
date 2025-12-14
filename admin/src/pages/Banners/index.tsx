@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber, Upload, Image } from 'antd';
+import type { UploadProps } from 'antd';
+import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber, Upload } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { bannerService } from '../../services/content';
+import { uploadImage } from '../../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
+import { normalizeUploadFileList } from '../../utils/uploadForm';
+import ImageWithFallback from '../../components/ImageWithFallback';
 
 const { Option } = Select;
 
@@ -18,6 +22,7 @@ interface BannerItem {
 }
 
 const Banners: React.FC = () => {
+  const placeholderBanner = '/assets/placeholder-banner.webp';
   const [loading, setLoading] = useState(false);
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -157,6 +162,17 @@ const Banners: React.FC = () => {
     }
   };
 
+  const uploadRequest: UploadProps['customRequest'] = async ({ file, onSuccess, onError, onProgress }) => {
+    try {
+      const resp = await uploadImage(file as File, {
+        onProgress: (percent) => onProgress?.({ percent }, file as any),
+      });
+      onSuccess?.(resp as any);
+    } catch (error) {
+      onError?.(error as any);
+    }
+  };
+
   // 图片上传配置
   const uploadProps = {
     name: 'file',
@@ -165,6 +181,8 @@ const Banners: React.FC = () => {
     showUploadList: true,
     accept: IMAGE_ACCEPT,
     beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
+    maxCount: 1,
+    customRequest: uploadRequest,
   };
 
   // 表格列配置
@@ -201,7 +219,7 @@ const Banners: React.FC = () => {
       dataIndex: 'image_url',
       key: 'image_url',
       render: (imageUrl: string) => (
-        <Image width={80} src={imageUrl} alt="Banner图片" />
+        <ImageWithFallback width={80} src={imageUrl} fallbackSrc={placeholderBanner} alt="Banner图片" />
       ),
     },
     {
@@ -360,6 +378,8 @@ const Banners: React.FC = () => {
             name="image_url"
             label="图片"
             rules={[{ required: true, message: '请上传图片' }]}
+            valuePropName="fileList"
+            getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 1 })}
           >
             <Upload {...uploadProps}>
               <div>

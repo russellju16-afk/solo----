@@ -1,15 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
+import type { UploadProps } from 'antd';
 import { Form, Input, Button, message, Upload, Space } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/company';
+import { uploadImage } from '../../services/upload';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
+import { normalizeUploadFileList } from '../../utils/uploadForm';
 
 const { TextArea } = Input;
 
 const CompanyInfo: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+
+  const uploadRequest: UploadProps['customRequest'] = async ({ file, onSuccess, onError, onProgress }) => {
+    try {
+      const resp = await uploadImage(file as File, {
+        onProgress: (percent) => onProgress?.({ percent }, file as any),
+      });
+      onSuccess?.(resp as any);
+    } catch (error) {
+      onError?.(error as any);
+    }
+  };
 
   // 图片上传配置（Logo 控制在 2MB 内）
   const logoUploadProps = {
@@ -19,6 +33,8 @@ const CompanyInfo: React.FC = () => {
     showUploadList: true,
     accept: IMAGE_ACCEPT,
     beforeUpload: (file: any) => validateImageBeforeUpload(file, 2),
+    maxCount: 1,
+    customRequest: uploadRequest,
   };
 
   // Banner 图片可稍大，限制 5MB
@@ -93,6 +109,8 @@ const CompanyInfo: React.FC = () => {
         <Form.Item
           name="logo"
           label="公司Logo"
+          valuePropName="fileList"
+          getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 1 })}
         >
           <Upload {...logoUploadProps}>
             <div>
@@ -105,6 +123,8 @@ const CompanyInfo: React.FC = () => {
         <Form.Item
           name="banner_image"
           label="首页Banner图片"
+          valuePropName="fileList"
+          getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 1 })}
         >
           <Upload {...bannerUploadProps}>
             <div>

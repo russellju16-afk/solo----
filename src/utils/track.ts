@@ -32,7 +32,7 @@ const getSessionId = () => {
   }
 }
 
-export function track(event: AnalyticsEventName, meta?: Record<string, any>) {
+export function track(event: AnalyticsEventName, meta?: Record<string, unknown>) {
   if (typeof window === 'undefined') return
 
   const payload = {
@@ -64,7 +64,7 @@ export function track(event: AnalyticsEventName, meta?: Record<string, any>) {
   }
 }
 
-export function signalLead(channel: 'phone' | 'wechat' | 'email', meta?: Record<string, any>) {
+export function signalLead(channel: 'phone' | 'wechat' | 'email', meta?: Record<string, unknown>) {
   if (typeof window === 'undefined') return
 
   const sessionId = getSessionId() || ''

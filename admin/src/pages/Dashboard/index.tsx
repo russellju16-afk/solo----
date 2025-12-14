@@ -312,7 +312,7 @@ const Dashboard: React.FC = () => {
                       dataIndex: 'status',
                       key: 'status',
                       width: 100,
-                      render: (value: any) => (
+                      render: (value: LeadListItem['status']) => (
                         <Tag color={STATUS_TAG_COLOR_MAP[value] || 'default'}>{STATUS_LABEL_MAP[value] || value}</Tag>
                       ),
                     },

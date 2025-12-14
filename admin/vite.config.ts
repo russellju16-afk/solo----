@@ -19,6 +19,10 @@ export default defineConfig({
         changeOrigin: true,
         // 移除rewrite配置，因为后端API已经包含/api前缀
       },
+      '/uploads': {
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3002',
+        changeOrigin: true,
+      },
     },
   },
 })

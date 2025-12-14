@@ -10,6 +10,7 @@ import { FeishuModule } from './modules/feishu/feishu.module';
 import { CompanyModule } from './modules/company/company.module';
 import { LoggingModule } from './modules/logging/logging.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     CompanyModule,
     LoggingModule,
     AnalyticsModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [],

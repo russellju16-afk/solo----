@@ -4,6 +4,7 @@ import { Card, Typography, Row, Col, Button, Space, Carousel, Spin, Result, Tag 
 import { ArrowLeftOutlined, ShoppingCartOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, CopyOutlined, WechatOutlined } from '@ant-design/icons';
 import { Helmet } from 'react-helmet';
 import { LeadForm } from '@/components/forms/LeadForm';
+import ImageWithFallback from '@/components/ImageWithFallback';
 import { Product } from '@/types/product';
 import { fetchProductDetail, fetchRecommendedProducts } from '@/services/products';
 import { message } from 'antd';
@@ -225,19 +226,20 @@ const ProductDetail: React.FC = () => {
         <Card bordered={false} className="shadow-lg">
           <Row gutter={[24, 24]}>
             {/* 产品图片 */}
-	            <Col xs={24} md={12}>
-	              <Carousel
-	                autoplay
-	                className="rounded-lg overflow-hidden"
-	                dotPosition="bottom"
-	              >
-	                {(imageUrls.length ? imageUrls : ['https://via.placeholder.com/800x600/FFFFFF/333333?text=产品图片']).map((image, index) => (
-	                  <div key={index} className="h-[260px] sm:h-[340px] md:h-[400px] bg-gray-100 flex items-center justify-center">
-	                    <img
-	                      src={image}
-	                      alt={`${product.name} ${index + 1}`}
-	                      className="max-w-full max-h-full object-contain"
-	                    />
+              <Col xs={24} md={12}>
+                <Carousel
+                  autoplay
+                  className="rounded-lg overflow-hidden"
+                  dotPosition="bottom"
+                >
+                  {(imageUrls.length ? imageUrls : [undefined]).map((image, index) => (
+                    <div key={index} className="h-[260px] sm:h-[340px] md:h-[400px] bg-gray-100 flex items-center justify-center">
+                      <ImageWithFallback
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        fallback="/assets/placeholder-product.webp"
+                        className="max-w-full max-h-full object-contain"
+                      />
                   </div>
                 ))}
               </Carousel>
@@ -286,36 +288,36 @@ const ProductDetail: React.FC = () => {
                   </Space>
                 )}
 
-	                {/* 操作按钮 */}
-	                <div className="pt-4">
-	                  <Space size={12} wrap direction={isMobile ? 'vertical' : 'horizontal'} style={isMobile ? { width: '100%' } : undefined}>
-	                    <Button
-	                      type="primary"
-	                      size="large"
-	                      icon={<ShoppingCartOutlined />}
-	                      className="bg-blue-600 hover:bg-blue-700"
-	                      style={isMobile ? { width: '100%' } : undefined}
-	                    >
-	                      加入购物车
-	                    </Button>
-	                    <Button
-	                      size="large"
-	                      icon={<PhoneOutlined />}
-	                      className="bg-orange-500 hover:bg-orange-600 text-white"
-	                      onClick={handleConsult}
-	                      style={isMobile ? { width: '100%' } : undefined}
-	                    >
-	                      立即咨询
-	                    </Button>
-	                    <Button size="large" icon={<CopyOutlined />} onClick={() => handleCopy(companyPhone)} style={isMobile ? { width: '100%' } : undefined}>
-	                      复制电话
-	                    </Button>
-	                    <Button size="large" icon={<WechatOutlined />} onClick={handleWechatJump} style={isMobile ? { width: '100%' } : undefined}>
-	                      微信咨询
-	                    </Button>
-	                  </Space>
-	                </div>
-	              </div>
+                  {/* 操作按钮 */}
+                  <div className="pt-4">
+                    <Space size={12} wrap direction={isMobile ? 'vertical' : 'horizontal'} style={isMobile ? { width: '100%' } : undefined}>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<ShoppingCartOutlined />}
+                        className="bg-blue-600 hover:bg-blue-700"
+                        style={isMobile ? { width: '100%' } : undefined}
+                      >
+                        加入购物车
+                      </Button>
+                      <Button
+                        size="large"
+                        icon={<PhoneOutlined />}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                        onClick={handleConsult}
+                        style={isMobile ? { width: '100%' } : undefined}
+                      >
+                        立即咨询
+                      </Button>
+                      <Button size="large" icon={<CopyOutlined />} onClick={() => handleCopy(companyPhone)} style={isMobile ? { width: '100%' } : undefined}>
+                        复制电话
+                      </Button>
+                      <Button size="large" icon={<WechatOutlined />} onClick={handleWechatJump} style={isMobile ? { width: '100%' } : undefined}>
+                        微信咨询
+                      </Button>
+                    </Space>
+                  </div>
+                </div>
             </Col>
           </Row>
         </Card>
@@ -345,21 +347,21 @@ const ProductDetail: React.FC = () => {
             title={<Title level={4} className="m-0">相关推荐</Title>}
             extra={<Text type="secondary">基于同类目与浏览行为</Text>}
           >
-	            <Row gutter={[16, 16]}>
-	              {recommendedProducts.map((item) => (
-	                <Col xs={24} md={12} key={item.id}>
-	                  <Card size="small" hoverable>
-	                    <div className="flex items-start justify-between gap-2 mb-2">
-	                      <Text strong className="cq-clamp-2">{item.name}</Text>
-	                      {item.price && <Tag color="red">¥{item.price}</Tag>}
-	                    </div>
-	                    <Paragraph ellipsis={{ rows: 2 }}>{item.description || '暂无描述'}</Paragraph>
-	                    <Space size="small" wrap>
-	                      <Link to={`/products/${item.id}`}>
-	                        <Button type="link" size="small">查看详情</Button>
-	                      </Link>
-	                      <Button size="small" onClick={() => handleCopy(companyPhone)}>咨询报价</Button>
-	                    </Space>
+              <Row gutter={[16, 16]}>
+                {recommendedProducts.map((item) => (
+                  <Col xs={24} md={12} key={item.id}>
+                    <Card size="small" hoverable>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <Text strong className="cq-clamp-2">{item.name}</Text>
+                        {item.price && <Tag color="red">¥{item.price}</Tag>}
+                      </div>
+                      <Paragraph ellipsis={{ rows: 2 }}>{item.description || '暂无描述'}</Paragraph>
+                      <Space size="small" wrap>
+                        <Link to={`/products/${item.id}`}>
+                          <Button type="link" size="small">查看详情</Button>
+                        </Link>
+                        <Button size="small" onClick={() => handleCopy(companyPhone)}>咨询报价</Button>
+                      </Space>
                   </Card>
                 </Col>
               ))}
@@ -376,19 +378,19 @@ const ProductDetail: React.FC = () => {
           title={<Title level={4} className="m-0">联系我们</Title>}
         >
           <Row gutter={[24, 24]}>
-	            <Col xs={24} sm={8}>
-	              <div className="flex flex-col items-center text-center p-4">
+              <Col xs={24} sm={8}>
+                <div className="flex flex-col items-center text-center p-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
                   <PhoneOutlined className="text-blue-600 text-xl" />
                 </div>
-	                <Title level={5} className="mb-1">联系电话</Title>
-	                <Text className="mb-2">{companyPhone}</Text>
-	                <Space wrap>
-	                  <Button type="primary" onClick={() => window.location.href = `tel:${companyPhone}`}>
-	                    拨打电话
-	                  </Button>
-	                  <Button icon={<CopyOutlined />} onClick={() => handleCopy(companyPhone)}>
-	                    复制
+                  <Title level={5} className="mb-1">联系电话</Title>
+                  <Text className="mb-2">{companyPhone}</Text>
+                  <Space wrap>
+                    <Button type="primary" onClick={() => window.location.href = `tel:${companyPhone}`}>
+                      拨打电话
+                    </Button>
+                    <Button icon={<CopyOutlined />} onClick={() => handleCopy(companyPhone)}>
+                      复制
                   </Button>
                 </Space>
               </div>

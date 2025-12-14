@@ -28,6 +28,7 @@ export interface Product {
   supply_area?: string;
   description?: string;
   status?: number;
+  cover_image?: string;
   specifications?: Record<string, string>;
   features?: string[];
   latest_price_note?: string;

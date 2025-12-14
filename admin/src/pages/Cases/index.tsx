@@ -1,14 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Upload, Image, DatePicker } from 'antd';
+import type { UploadProps } from 'antd';
+import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, Upload, DatePicker } from 'antd';
 import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { caseService } from '../../services/content';
+import { uploadImage } from '../../services/upload';
 import dayjs from 'dayjs';
 import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
+import { normalizeUploadFileList } from '../../utils/uploadForm';
+import ImageWithFallback from '../../components/ImageWithFallback';
 
 const { Option } = Select;
 
 const Cases: React.FC = () => {
+  const placeholderCover = '/assets/placeholder-card.webp';
   const [loading, setLoading] = useState(false);
   const [casesList, setCasesList] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -147,6 +152,17 @@ const Cases: React.FC = () => {
     }
   };
 
+  const uploadRequest: UploadProps['customRequest'] = async ({ file, onSuccess, onError, onProgress }) => {
+    try {
+      const resp = await uploadImage(file as File, {
+        onProgress: (percent) => onProgress?.({ percent }, file as any),
+      });
+      onSuccess?.(resp as any);
+    } catch (error) {
+      onError?.(error as any);
+    }
+  };
+
   // 图片上传配置
   const uploadProps = {
     name: 'file',
@@ -155,6 +171,8 @@ const Cases: React.FC = () => {
     showUploadList: true,
     accept: IMAGE_ACCEPT,
     beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
+    maxCount: 1,
+    customRequest: uploadRequest,
   };
 
   // 表格列配置
@@ -191,7 +209,7 @@ const Cases: React.FC = () => {
       dataIndex: 'cover_image',
       key: 'cover_image',
       render: (coverImage: string) => (
-        <Image width={80} src={coverImage} alt="案例封面" />
+        <ImageWithFallback width={80} src={coverImage} fallbackSrc={placeholderCover} alt="案例封面" />
       ),
     },
     {
@@ -368,6 +386,8 @@ const Cases: React.FC = () => {
           <Form.Item
             name="cover_image"
             label="封面图片"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 1 })}
           >
             <Upload {...uploadProps}>
               <div>

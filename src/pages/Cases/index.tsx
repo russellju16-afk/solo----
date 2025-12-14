@@ -1,157 +1,171 @@
-import React, { useState } from 'react';
-import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag } from 'antd';
-import { ArrowRightOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag, Skeleton } from 'antd'
+import { ArrowRightOutlined, CheckCircleOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { fetchCases } from '@/services/content'
+import type { CaseItem } from '@/types/content'
+import ImageWithFallback from '@/components/ImageWithFallback'
+import EmptyState from '@/components/EmptyState'
 
-const { Title, Paragraph } = Typography;
-const { Meta } = Card;
-const { Option } = Select;
+const { Title, Paragraph } = Typography
+const { Meta } = Card
+const { Option } = Select
 
-interface Case {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  category: string;
-  client: string;
-  date: string;
+const DEFAULT_INDUSTRY_TYPES = ['高校', '团餐', '商超', '食品加工', '其他']
+
+function getSnippet(summary?: string, detail?: string, maxLen = 72) {
+  const text = (summary || detail || '').replace(/\s+/g, ' ').trim()
+  if (!text) return '暂无摘要'
+  return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text
 }
 
 const Cases: React.FC = () => {
-  const isMobile = useIsMobile();
-  const cases: Case[] = [
-    {
-      id: 1,
-      title: '大型连锁超市粮油供应案例',
-      description: '为某大型连锁超市提供全方位的粮油供应服务，包括产品采购、质量检测、仓储和配送。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=连锁超市案例',
-      category: '超市',
-      client: '某大型连锁超市',
-      date: '2023-10-15',
-    },
-    {
-      id: 2,
-      title: '学校食堂粮油配送案例',
-      description: '为多所学校食堂提供粮油配送服务，确保学生饮食安全和营养。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=学校食堂案例',
-      category: '学校',
-      client: '某教育集团',
-      date: '2023-09-20',
-    },
-    {
-      id: 3,
-      title: '餐饮企业粮油采购案例',
-      description: '为多家餐饮企业提供优质的粮油采购服务，帮助他们降低成本，提高效率。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=餐饮企业案例',
-      category: '餐饮',
-      client: '某餐饮连锁企业',
-      date: '2023-08-10',
-    },
-    {
-      id: 4,
-      title: '企业食堂粮油供应案例',
-      description: '为多家大型企业食堂提供粮油供应服务，确保员工饮食健康。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=企业食堂案例',
-      category: '企业',
-      client: '某科技公司',
-      date: '2023-07-25',
-    },
-    {
-      id: 5,
-      title: '酒店粮油采购案例',
-      description: '为多家星级酒店提供优质的粮油采购服务，满足他们对高品质产品的需求。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=酒店案例',
-      category: '酒店',
-      client: '某酒店集团',
-      date: '2023-06-18',
-    },
-    {
-      id: 6,
-      title: '医院食堂粮油配送案例',
-      description: '为多家医院食堂提供粮油配送服务，确保患者和医护人员的饮食安全。',
-      image: 'https://via.placeholder.com/600x400/FFFFFF/333333?text=医院案例',
-      category: '医院',
-      client: '某医疗集团',
-      date: '2023-05-12',
-    },
-  ];
+  const isMobile = useIsMobile()
+  const [rows, setRows] = useState<CaseItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(6)
+  const [industryType, setIndustryType] = useState<string | undefined>()
+  const [loading, setLoading] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
-  const [category, setCategory] = useState('');
+  const industryOptions = useMemo(() => {
+    const set = new Set<string>(DEFAULT_INDUSTRY_TYPES)
+    rows.forEach((item) => item.industry_type && set.add(item.industry_type))
+    return Array.from(set)
+  }, [rows])
 
-  const categories = ['超市', '学校', '餐饮', '企业', '酒店', '医院'];
+  useEffect(() => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
 
-  const filteredCases = cases.filter(caseItem => {
-    const matchesCategory = category ? caseItem.category === category : true;
-    return matchesCategory;
-  });
+    setLoading(true)
+    fetchCases(
+      {
+        page: currentPage,
+        pageSize,
+        industry_type: industryType,
+      },
+      { signal: controller.signal },
+    )
+      .then((resp) => {
+        const nextRows = resp?.data || []
+        setTotal(resp?.total || 0)
+        setRows((prev) => (isMobile && currentPage > 1 ? [...prev, ...nextRows] : nextRows))
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return
+        setTotal(0)
+        setRows((prev) => (isMobile && currentPage > 1 ? prev : []))
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      })
 
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    setCurrentPage(1);
-  };
+    return () => controller.abort()
+  }, [currentPage, industryType, isMobile, pageSize])
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedCases = filteredCases.slice(startIndex, endIndex);
-  const visibleCases = isMobile ? filteredCases.slice(0, currentPage * pageSize) : paginatedCases;
+  const hasMore = rows.length < total
 
   return (
     <div className="min-h-screen py-8 md:py-12">
       <Helmet>
         <title>成功案例 - 西安超群粮油贸易有限公司</title>
-        <meta name="description" content="西安超群粮油贸易有限公司成功案例展示，包括超市、学校、餐饮、企业等多个行业的粮油供应服务案例。" />
-        <meta name="keywords" content="西安超群粮油, 成功案例, 粮油供应, 超市案例, 学校案例, 餐饮案例" />
+        <meta name="description" content="西安超群粮油贸易有限公司成功案例展示，覆盖高校、团餐、商超等行业应用场景。" />
+        <meta name="keywords" content="西安超群粮油, 成功案例, 粮油供应, 团餐, 商超, 高校" />
       </Helmet>
 
       <div className="container mx-auto px-4">
-        {/* 页面标题 */}
         <div className="mb-10 md:mb-16 text-center">
           <Title level={2}>成功案例</Title>
-          <Paragraph className="max-w-3xl mx-auto">
-            我们为多个行业提供优质的粮油服务，积累了丰富的经验和成功案例。
-          </Paragraph>
+          <Paragraph className="max-w-3xl mx-auto">我们为多个行业提供优质的粮油服务，积累了丰富的经验和成功案例。</Paragraph>
         </div>
 
-        {/* 筛选 */}
         <div className="mb-8 md:mb-12 flex justify-center">
           <Select
-            placeholder="选择案例类别"
+            placeholder="选择行业类型"
             style={{ width: isMobile ? '100%' : 200, maxWidth: 320 }}
-            onChange={handleCategoryChange}
+            value={industryType}
+            onChange={(value) => {
+              setIndustryType(value)
+              setCurrentPage(1)
+              if (isMobile) setRows([])
+            }}
             allowClear
           >
-            {categories.map(cat => (
-              <Option key={cat} value={cat}>{cat}</Option>
+            {industryOptions.map((cat) => (
+              <Option key={cat} value={cat}>
+                {cat}
+              </Option>
             ))}
           </Select>
         </div>
 
-        {/* 案例列表 */}
-        {isMobile ? (
+        {loading && rows.length === 0 ? (
+          isMobile ? (
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <List
+                itemLayout="horizontal"
+                dataSource={Array.from({ length: Math.min(pageSize, 6) })}
+                renderItem={(_, index) => (
+                  <List.Item className="px-4 py-4" key={index}>
+                    <Skeleton active avatar={{ shape: 'square', size: 80 }} title paragraph={{ rows: 2 }} />
+                  </List.Item>
+                )}
+              />
+            </div>
+          ) : (
+            <Row gutter={[24, 24]}>
+              {Array.from({ length: pageSize }).map((_, index) => (
+                <Col key={index} xs={24} sm={12} md={8}>
+                  <Card loading className="h-full" />
+                </Col>
+              ))}
+            </Row>
+          )
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="暂无案例"
+            description="还没有发布案例内容，您可以先浏览产品或联系我们获取报价。"
+            actions={
+              <Space>
+                <Link to="/products">
+                  <Button>去产品中心</Button>
+                </Link>
+                <Link to="/contact#quote">
+                  <Button type="primary">获取报价</Button>
+                </Link>
+              </Space>
+            }
+          />
+        ) : isMobile ? (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <List
               itemLayout="horizontal"
-              dataSource={visibleCases}
+              dataSource={rows}
               renderItem={(caseItem) => (
                 <List.Item className="px-4 py-4">
                   <Link to={`/cases/${caseItem.id}`} className="flex gap-4 w-full">
-                    <img
-                      src={caseItem.image}
-                      alt={caseItem.title}
+                    <ImageWithFallback
+                      src={caseItem.cover_image}
+                      alt={caseItem.customer_name}
+                      fallback="/assets/placeholder-card.webp"
                       className="w-28 h-20 object-cover rounded-lg flex-shrink-0"
                       loading="lazy"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-gray-900 cq-clamp-2">{caseItem.title}</div>
-                      <div className="text-sm text-gray-600 mt-1 cq-clamp-2">{caseItem.description}</div>
+                      <div className="font-semibold text-gray-900 cq-clamp-2">{caseItem.customer_name}</div>
+                      <div className="text-sm text-gray-600 mt-1 cq-clamp-2">{getSnippet(caseItem.summary, caseItem.detail, 56)}</div>
                       <Space size={6} wrap className="mt-2">
-                        <Tag color="blue">{caseItem.category}</Tag>
-                        <Tag>{caseItem.client}</Tag>
-                        <Tag>{caseItem.date}</Tag>
+                        <Tag color="blue">{caseItem.industry_type}</Tag>
+                        {caseItem.published_at ? (
+                          <Tag icon={<CalendarOutlined />}>{new Date(caseItem.published_at).toLocaleDateString()}</Tag>
+                        ) : null}
                       </Space>
                     </div>
                   </Link>
@@ -161,16 +175,17 @@ const Cases: React.FC = () => {
           </div>
         ) : (
           <Row gutter={[24, 24]}>
-            {paginatedCases.map(caseItem => (
+            {rows.map((caseItem) => (
               <Col key={caseItem.id} xs={24} sm={12} md={8}>
                 <Card
                   hoverable
                   className="h-full transition-all hover:shadow-xl"
                   cover={
-                    <div className="h-[200px] overflow-hidden">
-                      <img 
-                        alt={caseItem.title} 
-                        src={caseItem.image} 
+                    <div className="h-[200px] overflow-hidden bg-gray-50">
+                      <ImageWithFallback
+                        alt={caseItem.customer_name}
+                        src={caseItem.cover_image}
+                        fallback="/assets/placeholder-card.webp"
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         loading="lazy"
                       />
@@ -178,33 +193,25 @@ const Cases: React.FC = () => {
                   }
                   actions={[
                     <Link to={`/cases/${caseItem.id}`} key="detail">
-                      <Button
-                        type="link"
-                        icon={<ArrowRightOutlined />}
-                        className="p-0"
-                      >
+                      <Button type="link" icon={<ArrowRightOutlined />} className="p-0">
                         查看详情
                       </Button>
-                    </Link>
+                    </Link>,
                   ]}
                 >
                   <Meta
-                    title={caseItem.title}
+                    title={caseItem.customer_name}
                     description={
                       <div className="space-y-3">
-                        <Paragraph ellipsis={{ rows: 2 }}>{caseItem.description}</Paragraph>
+                        <Paragraph ellipsis={{ rows: 2 }}>{getSnippet(caseItem.summary, caseItem.detail, 96)}</Paragraph>
                         <div className="flex flex-wrap gap-2 text-xs">
                           <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
                             <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                            <span>{caseItem.category}</span>
+                            <span>{caseItem.industry_type}</span>
                           </div>
                           <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
                             <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                            <span>{caseItem.client}</span>
-                          </div>
-                          <div className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                            <CheckCircleOutlined className="text-blue-600 mr-1 text-xs" />
-                            <span>{caseItem.date}</span>
+                            <span>{caseItem.published_at ? new Date(caseItem.published_at).toLocaleDateString() : '-'}</span>
                           </div>
                         </div>
                       </div>
@@ -216,73 +223,47 @@ const Cases: React.FC = () => {
           </Row>
         )}
 
-        {/* 分页 */}
-        {filteredCases.length > pageSize && (
+        {total > pageSize && (
           <div className="mt-10 md:mt-12 flex justify-center">
             {isMobile ? (
-              <Button
-                size="large"
-                disabled={visibleCases.length >= filteredCases.length}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-              >
-                {visibleCases.length >= filteredCases.length ? '已加载全部' : '加载更多'}
+              <Button size="large" disabled={!hasMore} loading={loading && hasMore} onClick={() => setCurrentPage((p) => p + 1)}>
+                {hasMore ? '加载更多' : '已加载全部'}
               </Button>
             ) : (
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
-                total={filteredCases.length}
+                total={total}
                 onChange={setCurrentPage}
                 onShowSizeChange={(_, size) => {
-                  setPageSize(size);
-                  setCurrentPage(1);
+                  setPageSize(size)
+                  setCurrentPage(1)
                 }}
                 showSizeChanger
                 pageSizeOptions={['6', '12', '24']}
-                showTotal={(total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`}
+                showTotal={(t, range) => `第 ${range[0]}-${range[1]} 条，共 ${t} 条`}
               />
             )}
           </div>
         )}
 
-        {/* 空状态 */}
-        {filteredCases.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-lg shadow-md">
-            <Paragraph className="text-gray-500 text-lg">未找到符合条件的案例</Paragraph>
-            <Button 
-              type="primary" 
-              onClick={() => {
-                setCategory('');
-                setCurrentPage(1);
-              }}
-            >
-              重置筛选条件
-            </Button>
-          </div>
-        )}
-
-        {/* 合作邀请 */}
         <section className="py-16 mt-20 bg-blue-600 text-white rounded-lg">
           <div className="container mx-auto px-4 text-center">
-            <Title level={3} className="mb-6 text-white">想成为我们的下一个成功案例吗？</Title>
-            <Paragraph className="max-w-2xl mx-auto mb-8">
-              我们拥有丰富的经验和专业的团队，可以为您提供优质的粮油服务。
-            </Paragraph>
+            <Title level={3} className="mb-6 text-white">
+              想成为我们的下一个成功案例吗？
+            </Title>
+            <Paragraph className="max-w-2xl mx-auto mb-8 text-white/90">我们拥有丰富的经验和专业的团队，可以为您提供优质的粮油服务。</Paragraph>
             <Link to="/contact">
-            <Button 
-              type="primary" 
-              size="large" 
-              icon={<ArrowRightOutlined />} 
-              className="bg-white text-blue-600 hover:bg-gray-100"
-            >
-              联系我们
-            </Button>
-          </Link>
+              <Button type="primary" size="large" icon={<ArrowRightOutlined />} className="bg-white text-blue-600 hover:bg-gray-100">
+                联系我们
+              </Button>
+            </Link>
           </div>
         </section>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Cases;
+export default Cases
+

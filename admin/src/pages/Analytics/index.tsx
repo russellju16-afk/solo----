@@ -9,6 +9,41 @@ const { RangePicker } = DatePicker
 
 type RangePreset = 'today' | '7d' | '30d' | 'custom'
 
+type AnalyticsKpis = {
+  views: number
+  searches: number
+  compares: number
+  quoteLeads: number
+  signalClicks: number
+  quoteConversionRate: number
+}
+
+type AnalyticsFunnelItem = {
+  stage: string
+  value: number
+  percent: number
+}
+
+type AnalyticsChannelItem = {
+  channel: string
+  count: number
+  rate: number
+}
+
+type AnalyticsTopFilterItem = {
+  name: string
+  usage: number
+}
+
+type AnalyticsOverview = {
+  range: { startAt: string; endAt: string }
+  updatedAt: string
+  kpis: AnalyticsKpis
+  funnel: AnalyticsFunnelItem[]
+  channels: AnalyticsChannelItem[]
+  topFilters: AnalyticsTopFilterItem[]
+}
+
 const computePresetRange = (preset: RangePreset): [Dayjs, Dayjs] => {
   const today = dayjs().startOf('day')
   if (preset === 'today') return [today, today]
@@ -52,7 +87,7 @@ const Analytics: React.FC = () => {
   const [customRange, setCustomRange] = useState<[Dayjs | null, Dayjs | null]>([null, null])
   const [lastUpdated, setLastUpdated] = useState(() => dayjs().format('YYYY-MM-DD HH:mm'))
   const [loading, setLoading] = useState(false)
-  const [overview, setOverview] = useState<any | null>(null)
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
   const warnedRef = useRef(false)
 
   const rangeValue = useMemo<[Dayjs, Dayjs]>(() => {
@@ -92,7 +127,7 @@ const Analytics: React.FC = () => {
     const fetchOverview = async () => {
       setLoading(true)
       try {
-        const res: any = await getAnalyticsOverview(rangeQuery)
+        const res = (await getAnalyticsOverview(rangeQuery)) as AnalyticsOverview
         if (cancelled) return
         setOverview(res)
         setLastUpdated(dayjs(res?.updatedAt || new Date()).format('YYYY-MM-DD HH:mm'))
@@ -115,7 +150,7 @@ const Analytics: React.FC = () => {
     }
   }, [rangeQuery])
 
-  const kpis = overview?.kpis || {
+  const kpis: AnalyticsKpis = overview?.kpis || {
     views: 1280,
     searches: 860,
     compares: 320,
@@ -124,7 +159,7 @@ const Analytics: React.FC = () => {
     quoteConversionRate: 10.9,
   }
 
-  const funnel = useMemo(() => {
+  const funnel = useMemo<AnalyticsFunnelItem[]>(() => {
     if (Array.isArray(overview?.funnel) && overview.funnel.length > 0) return overview.funnel
     const base = fallbackFunnel[0]?.value || 0
     return fallbackFunnel.map((item, index) => ({
@@ -133,8 +168,10 @@ const Analytics: React.FC = () => {
     }))
   }, [fallbackFunnel, overview])
 
-  const channels = Array.isArray(overview?.channels) && overview.channels.length > 0 ? overview.channels : fallbackChannels
-  const topFilters = Array.isArray(overview?.topFilters) && overview.topFilters.length > 0 ? overview.topFilters : fallbackTopFilters
+  const channels: AnalyticsChannelItem[] =
+    Array.isArray(overview?.channels) && overview.channels.length > 0 ? overview.channels : fallbackChannels
+  const topFilters: AnalyticsTopFilterItem[] =
+    Array.isArray(overview?.topFilters) && overview.topFilters.length > 0 ? overview.topFilters : fallbackTopFilters
 
   return (
     <div className="analytics-page">
@@ -211,7 +248,7 @@ const Analytics: React.FC = () => {
           <Col xs={24} lg={12}>
             <Card title="漏斗表现" bordered={false} loading={loading}>
               <div className="analytics-funnel-list">
-                {funnel.map((item: any) => {
+                {funnel.map((item) => {
                   const percent = Number.isFinite(item.percent) ? item.percent : 0
                   return (
                     <div key={item.stage} className="analytics-funnel-item">
