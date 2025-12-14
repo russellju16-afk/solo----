@@ -7,6 +7,13 @@ export class Solution {
 
   @Column({
     type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  cover_image: string;
+
+  @Column({
+    type: 'varchar',
     length: 50,
   })
   channel_type: string; // 高校/团餐/...

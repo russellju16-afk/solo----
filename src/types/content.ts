@@ -32,6 +32,7 @@ export interface NewsItem {
 
 export interface Solution {
   id: number;
+  cover_image?: string;
   channel_type: string;
   title: string;
   intro?: string;

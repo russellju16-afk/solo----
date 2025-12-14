@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Input, Select, DatePicker, Form, Tag, message, Modal } from 'antd';
 import { SearchOutlined, DownloadOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { leadService } from '../../services/lead';
 import { LeadListItem, ChannelType, CategoryInterest, LeadType, SignalChannel } from '../../types/lead';
@@ -24,6 +24,7 @@ const LeadsList: React.FC = () => {
   // 路由参数和导航
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // 状态管理
   const [loading, setLoading] = useState(false);
@@ -71,6 +72,37 @@ const LeadsList: React.FC = () => {
       setSignalChannel('all');
     }
   }, [leadType]);
+
+  // 支持从 URL 参数预填日期范围：/leads?range=today|7d|30d|month
+  useEffect(() => {
+    const range = searchParams.get('range');
+    if (!range) return;
+
+    const today = dayjs();
+
+    if (range === 'today') {
+      setDateRange([today, today]);
+      setCurrentPage(1);
+      return;
+    }
+
+    if (range === '7d') {
+      setDateRange([today.subtract(6, 'day'), today]);
+      setCurrentPage(1);
+      return;
+    }
+
+    if (range === '30d') {
+      setDateRange([today.subtract(29, 'day'), today]);
+      setCurrentPage(1);
+      return;
+    }
+
+    if (range === 'month') {
+      setDateRange([today.startOf('month'), today]);
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
   
   // 获取线索列表
   const fetchLeads = useCallback(async () => {
@@ -483,6 +515,7 @@ const LeadsList: React.FC = () => {
         dataSource={leads}
         rowKey="id"
         loading={loading}
+        locale={{ emptyText: '暂无线索数据' }}
         pagination={{
           current: currentPage,
           pageSize: pageSize,

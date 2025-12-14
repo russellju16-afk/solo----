@@ -1,12 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber } from 'antd';
-import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
+import type { UploadProps } from 'antd';
+import { Table, Button, Space, Input, Select, Modal, message, Popconfirm, Tag, Form, InputNumber, Upload } from 'antd';
+import { SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { solutionService } from '../../services/content';
+import { uploadImage } from '../../services/upload';
+import { IMAGE_ACCEPT, validateImageBeforeUpload } from '../../utils/upload';
+import { normalizeUploadFileList } from '../../utils/uploadForm';
+import ImageWithFallback from '../../components/ImageWithFallback';
 
 const { Option } = Select;
 
 const Solutions: React.FC = () => {
+  const placeholderCover = '/assets/placeholder-card.webp';
   const [loading, setLoading] = useState(false);
   const [solutionsList, setSolutionsList] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -87,6 +93,9 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
+      cover_image: record.cover_image
+        ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }]
+        : [],
       pain_points: record.pain_points?.join('\n'),
       solutions: record.solutions?.join('\n'),
       product_ids: record.product_ids?.join(','),
@@ -99,6 +108,9 @@ const Solutions: React.FC = () => {
     setCurrentSolution(record);
     form.setFieldsValue({
       ...record,
+      cover_image: record.cover_image
+        ? [{ uid: '1', name: record.cover_image.split('/').pop(), status: 'done', url: record.cover_image }]
+        : [],
       pain_points: record.pain_points?.join('\n'),
       solutions: record.solutions?.join('\n'),
       product_ids: record.product_ids?.join(','),
@@ -121,8 +133,10 @@ const Solutions: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
+      const coverImage = values.cover_image && values.cover_image[0]?.url;
       const solutionData = {
         ...values,
+        cover_image: coverImage,
         pain_points: values.pain_points
           ? values.pain_points.split('\n').map((item: string) => item.trim()).filter((item: string) => item)
           : [],
@@ -152,6 +166,27 @@ const Solutions: React.FC = () => {
     }
   };
 
+  const uploadRequest: UploadProps['customRequest'] = async ({ file, onSuccess, onError, onProgress }) => {
+    try {
+      const resp = await uploadImage(file as File, {
+        onProgress: (percent) => onProgress?.({ percent }, file as any),
+      });
+      onSuccess?.(resp as any);
+    } catch (error) {
+      onError?.(error as any);
+    }
+  };
+
+  const uploadProps = {
+    name: 'file',
+    listType: 'picture-card' as const,
+    showUploadList: true,
+    accept: IMAGE_ACCEPT,
+    beforeUpload: (file: any) => validateImageBeforeUpload(file, 5),
+    maxCount: 1,
+    customRequest: uploadRequest,
+  };
+
   // 表格列配置
   const columns = [
     {
@@ -159,6 +194,15 @@ const Solutions: React.FC = () => {
       dataIndex: 'id',
       key: 'id',
       width: 80,
+    },
+    {
+      title: '封面',
+      dataIndex: 'cover_image',
+      key: 'cover_image',
+      width: 110,
+      render: (coverImage: string) => (
+        <ImageWithFallback width={80} src={coverImage} fallbackSrc={placeholderCover} alt="封面" />
+      ),
     },
     {
       title: '标题',
@@ -361,6 +405,20 @@ const Solutions: React.FC = () => {
                 </Option>
               ))}
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="cover_image"
+            label="封面图"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => normalizeUploadFileList(e, { maxCount: 1 })}
+          >
+            <Upload {...uploadProps}>
+              <div>
+                <UploadOutlined />
+                <div style={{ marginTop: 8 }}>上传封面</div>
+              </div>
+            </Upload>
           </Form.Item>
 
           <Form.Item

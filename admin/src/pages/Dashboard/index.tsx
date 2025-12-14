@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
         value: todayLeads,
         suffix: '条',
         icon: <FieldTimeOutlined />,
-        onView: () => navigate('/leads'),
+        onView: () => navigate('/leads?range=today'),
         footer:
           statsLoading
             ? '数据加载中…'
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
         value: monthLeads,
         suffix: '条',
         icon: <BarChartOutlined />,
-        onView: () => navigate('/leads'),
+        onView: () => navigate('/leads?range=month'),
         footer:
           statsLoading
             ? '数据加载中…'
@@ -226,13 +226,21 @@ const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]} className="dashboard-stat-row">
         {statCards.map(stat => (
           <Col xs={24} sm={12} lg={6} key={stat.key}>
-            <Card className="stat-card" bordered={false}>
+            <Card className="stat-card" bordered={false} hoverable onClick={stat.onView}>
               <div className="stat-card-header">
                 <div className="stat-card-title">
                   <span className="stat-icon">{stat.icon}</span>
                   <span>{stat.title}</span>
                 </div>
-                <Button type="link" size="small" onClick={stat.onView} className="stat-view-button">
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    stat.onView()
+                  }}
+                  className="stat-view-button"
+                >
                   查看
                 </Button>
               </div>

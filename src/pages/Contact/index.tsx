@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { PhoneOutlined, MailOutlined, EnvironmentOutlined, ClockCircleOutlined, WechatOutlined, CopyOutlined } from '@ant-design/icons'
 import { Button, message, Space, Card, Typography } from 'antd'
 import { LeadForm } from '@/components/forms/LeadForm'
+import ImageWithFallback from '@/components/ImageWithFallback'
 import { useCompanyInfo } from '@/hooks/useCompanyInfo'
 import { fetchFaqs } from '@/services/content'
 import { FaqItem } from '@/types/content'
@@ -149,7 +150,7 @@ const Contact: React.FC = () => {
                 <h3 className="text-lg font-medium mb-4">微信二维码</h3>
                 <div className="w-48 h-48 bg-light rounded-md flex items-center justify-center mx-auto mb-4">
                   {wechatQr ? (
-                    <img src={wechatQr} alt="微信二维码" className="max-h-48 object-contain" />
+                    <ImageWithFallback src={wechatQr} alt="微信二维码" fallback="/assets/placeholder-qr.webp" className="max-h-48 object-contain" />
                   ) : (
                     <WechatOutlined className="text-4xl text-gray-400" />
                   )}

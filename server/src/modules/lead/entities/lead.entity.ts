@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, JoinColumn } from 'typeorm';
 import { LeadFollowup } from './lead-followup.entity';
 import { User } from '../../user/entities/user.entity';
 
@@ -152,16 +152,10 @@ export class Lead {
   })
   status: string; // new / processing / won / lost
 
-  @Column({
-    name: 'owner_id',
-    type: 'int',
-    nullable: true,
-  })
-  ownerId: number;
-
   @ManyToOne(() => User, (user) => user.id, {
     nullable: true,
   })
+  @JoinColumn({ name: 'owner_id' })
   owner: User; // 负责销售
 
   @OneToMany(() => LeadFollowup, (followup) => followup.lead)

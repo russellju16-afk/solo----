@@ -19,6 +19,14 @@ export class ProductController {
     return this.productService.findOneById(Number(id));
   }
 
+  // 前台接口：相关推荐（无需认证）
+  @Get('products/:id/recommendations')
+  async recommendations(@Param('id') id: string, @Query() query: any) {
+    const limit = query.limit !== undefined ? Number(query.limit) : undefined;
+    const categoryId = query.categoryId !== undefined ? Number(query.categoryId) : undefined;
+    return this.productService.findRecommendations(Number(id), { limit, categoryId });
+  }
+
   // 后台接口：获取产品列表（需要认证）
   @Get('admin/products')
   @UseGuards(AuthGuard('jwt'))

@@ -165,6 +165,39 @@ export class ProductService {
     });
   }
 
+  // 前台推荐：同类目产品（默认返回上架的前 N 条）
+  async findRecommendations(
+    productId: number,
+    options: { limit?: number; categoryId?: number } = {},
+  ): Promise<any[]> {
+    const requestedLimit = Number(options.limit);
+    const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 12) : 4;
+
+    let categoryId = options.categoryId;
+    if (!Number.isFinite(categoryId)) {
+      const current = await this.productRepository
+        .createQueryBuilder('p')
+        .leftJoin('p.category', 'c')
+        .select(['p.id', 'c.id'])
+        .where('p.id = :id', { id: productId })
+        .getOne();
+      categoryId = current?.category?.id;
+    }
+
+    if (!Number.isFinite(categoryId)) {
+      return [];
+    }
+
+    const qb = this.buildQueryBuilder({ categoryId, status: 1 });
+    qb.andWhere('product.id != :id', { id: productId });
+
+    const { raw, entities } = await qb.take(limit).getRawAndEntities();
+    return entities.map((entity, index) => {
+      const coverImage = raw[index]?.cover_image;
+      return coverImage ? { ...entity, cover_image: coverImage } : entity;
+    });
+  }
+
   // 创建产品
   async create(createProductDto: any): Promise<any> {
     const { rest, categoryId, brandId, imageUrls } = this.splitPayload(createProductDto);

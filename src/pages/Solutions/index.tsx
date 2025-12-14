@@ -14,6 +14,7 @@ import { fetchSolutions } from '@/services/content'
 import type { Solution } from '@/types/content'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import EmptyState from '@/components/EmptyState'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 const { Title, Paragraph } = Typography
 const { Meta } = Card
@@ -157,7 +158,18 @@ const Solutions: React.FC = () => {
                   <Card
                     hoverable
                     className="h-full transition-all hover:shadow-xl"
-                    cover={<div className="h-[200px] bg-gray-50 flex items-center justify-center">{option?.icon}</div>}
+                    cover={
+                      solution.cover_image ? (
+                        <ImageWithFallback
+                          src={solution.cover_image}
+                          fallback="/assets/placeholder-card.webp"
+                          alt={solution.title}
+                          className="h-[200px] w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-[200px] bg-gray-50 flex items-center justify-center">{option?.icon}</div>
+                      )
+                    }
                   >
                     <Meta
                       title={

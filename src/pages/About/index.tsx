@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useCompanyInfo } from '@/hooks/useCompanyInfo'
+import ImageWithFallback from '@/components/ImageWithFallback'
 
 const About: React.FC = () => {
   const { companyInfo } = useCompanyInfo()
@@ -88,9 +89,12 @@ const About: React.FC = () => {
                 </p>
               </div>
               <div className="bg-light rounded-lg p-6 flex items-center justify-center">
-                {bannerImage
-                  ? <img src={bannerImage} alt="公司形象" className="max-h-80 object-contain" />
-                  : <span className="text-gray-400 text-xl">公司形象图片</span>}
+                <ImageWithFallback
+                  src={bannerImage}
+                  fallback="/assets/placeholder-banner.webp"
+                  alt="公司形象"
+                  className="max-h-80 w-full object-contain"
+                />
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { CompanyModule } from './modules/company/company.module';
 import { LoggingModule } from './modules/logging/logging.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { FaqModule } from './modules/faq/faq.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { UploadModule } from './modules/upload/upload.module';
     LoggingModule,
     AnalyticsModule,
     UploadModule,
+    FaqModule,
   ],
   controllers: [],
   providers: [],
