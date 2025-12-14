@@ -9,6 +9,8 @@ export default function ImageWithFallback({
   src,
   fallback = '/assets/placeholder-card.webp',
   onError,
+  loading,
+  decoding,
   ...rest
 }: Props) {
   const [hasError, setHasError] = useState(false)
@@ -22,6 +24,8 @@ export default function ImageWithFallback({
   return (
     <img
       {...rest}
+      loading={loading ?? 'lazy'}
+      decoding={decoding ?? 'async'}
       src={finalSrc}
       onError={(event) => {
         setHasError(true)
@@ -30,4 +34,3 @@ export default function ImageWithFallback({
     />
   )
 }
-

@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 import AppLayout from './components/layout/AppLayout'
 
-const Home = lazy(() => import('./pages/Home/index'))
+import Home from './pages/Home/index'
 const ProductsList = lazy(() => import('./pages/Products/List/index'))
 const ProductDetail = lazy(() => import('./pages/Products/Detail/index'))
 const Solutions = lazy(() => import('./pages/Solutions/index'))

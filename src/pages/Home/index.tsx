@@ -122,12 +122,13 @@ const Home: React.FC = () => {
 
       {carouselItems.length > 0 ? (
         <Carousel autoplay className="w-full">
-          {carouselItems.map((item) => (
+          {carouselItems.map((item, index) => (
             <div key={item.id} className="relative">
               <ImageWithFallback
                 src={item.image}
                 fallback="/assets/placeholder-banner.webp"
                 alt={item.title}
+                loading={index === 0 ? 'eager' : undefined}
                 className="w-full h-[280px] md:h-[400px] object-cover"
               />
               <div className="absolute inset-0 bg-black bg-opacity-35 flex flex-col justify-center items-center text-white p-4">
@@ -171,6 +172,7 @@ const Home: React.FC = () => {
               src={companyInfo?.banner_image}
               fallback="/assets/placeholder-banner.webp"
               alt="首页主视觉"
+              loading="eager"
               className="w-full h-full object-cover opacity-45"
             />
           </div>

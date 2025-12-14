@@ -14,7 +14,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <CompanyInfoProvider>
-      <div className="min-h-screen bg-light" style={isMobile ? { paddingBottom: 72 } : undefined}>
+      <div
+        className="min-h-screen bg-light"
+        style={isMobile ? { paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' } : undefined}
+      >
         <Header />
         <main className="bg-white">
           {children}

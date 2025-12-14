@@ -10,6 +10,8 @@ import { Product, ProductCategory } from '@/types/product';
 import { track } from '@/utils/track';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import PageEmpty from '@/components/PageEmpty';
+import PageSkeleton from '@/components/PageSkeleton';
 
 const { Title, Paragraph, Text } = Typography;
 const { Meta } = Card;
@@ -31,6 +33,7 @@ const ProductsList: React.FC = () => {
   });
   const [keyword, setKeyword] = useState(() => searchParams.get('keyword') || '');
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [filterPresets, setFilterPresets] = useState<{ name: string; categoryId?: number; keyword: string }[]>(() => {
@@ -81,6 +84,7 @@ const ProductsList: React.FC = () => {
     abortControllerRef.current = controller;
 
     setLoading(true);
+    setLoadError(null);
     try {
       const resp = await fetchProducts({ page, pageSize, categoryId, keyword, signal: controller.signal });
       if (requestIdRef.current !== currentRequestId || controller.signal.aborted) {
@@ -89,10 +93,12 @@ const ProductsList: React.FC = () => {
       const nextRows = resp?.data || [];
       setProducts((prev) => (isMobile && page > 1 ? [...prev, ...nextRows] : nextRows));
       setTotal(resp?.total || 0);
+      setLoadError(null);
     } catch (error) {
       if (controller.signal.aborted || axios.isCancel(error)) {
         return;
       }
+      setLoadError('获取产品列表失败，请稍后重试');
       message.error('获取产品列表失败');
     } finally {
       if (requestIdRef.current === currentRequestId && !controller.signal.aborted) {
@@ -460,8 +466,48 @@ const ProductsList: React.FC = () => {
         </div>
 
         {/* 产品列表 */}
-        <Spin spinning={loading} tip="加载产品中...">
-          <Row gutter={[16, 16]}>
+        {loading && products.length === 0 ? (
+          <PageSkeleton variant="cards" count={pageSize} />
+        ) : loadError && products.length === 0 ? (
+          <PageEmpty
+            title="加载失败"
+            description={loadError}
+            actions={
+              <Space>
+                <Button type="primary" onClick={loadProducts}>
+                  重试
+                </Button>
+                <Link to="/contact#quote">
+                  <Button>获取报价</Button>
+                </Link>
+              </Space>
+            }
+          />
+        ) : products.length === 0 ? (
+          <PageEmpty
+            title="未找到产品"
+            description="未找到符合条件的产品，您可以调整筛选条件或联系我们获取报价。"
+            actions={
+              <Space wrap>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    setCategoryId(undefined);
+                    setKeyword('');
+                    setPage(1);
+                  }}
+                >
+                  重置筛选
+                </Button>
+                <Link to="/contact#quote">
+                  <Button>获取报价</Button>
+                </Link>
+              </Space>
+            }
+          />
+        ) : (
+          <Spin spinning={loading} tip="加载产品中...">
+            <Row gutter={[16, 16]}>
               {products.map(product => (
                 <Col key={product.id} xs={24} sm={12} md={8}>
                   <Card
@@ -510,32 +556,33 @@ const ProductsList: React.FC = () => {
                           )}
                         </div>
                       }
-                    description={
-                      <>
-                        <Paragraph ellipsis={{ rows: 2 }}>{product.description || '暂无产品描述'}</Paragraph>
-                        <div className="text-gray-600 text-sm space-y-1">
-                          {product.spec_weight && (
-                            <Text className="block">规格：{product.spec_weight}</Text>
-                          )}
-                          {product.package_type && (
-                            <Text className="block">包装：{product.package_type}</Text>
-                          )}
-                        </div>
-                        {product.applicable_scenes && product.applicable_scenes.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {product.applicable_scenes.map((scene) => (
-                              <Tag key={scene}>{scene}</Tag>
-                            ))}
+                      description={
+                        <>
+                          <Paragraph ellipsis={{ rows: 2 }}>{product.description || '暂无产品描述'}</Paragraph>
+                          <div className="text-gray-600 text-sm space-y-1">
+                            {product.spec_weight && (
+                              <Text className="block">规格：{product.spec_weight}</Text>
+                            )}
+                            {product.package_type && (
+                              <Text className="block">包装：{product.package_type}</Text>
+                            )}
                           </div>
-                        )}
-                      </>
-                    }
-                  />
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Spin>
+                          {product.applicable_scenes && product.applicable_scenes.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {product.applicable_scenes.map((scene) => (
+                                <Tag key={scene}>{scene}</Tag>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      }
+                    />
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </Spin>
+        )}
 
         <Drawer
           title={`产品对比（${selectedProducts.length}）`}
@@ -591,22 +638,6 @@ const ProductsList: React.FC = () => {
           </div>
         )}
 
-        {/* 空状态 */}
-        {!loading && products.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-lg shadow-md">
-            <Paragraph className="text-gray-500 text-lg">未找到符合条件的产品</Paragraph>
-            <Button 
-              type="primary" 
-              onClick={() => {
-                setCategoryId(undefined);
-                setKeyword('');
-                setPage(1);
-              }}
-            >
-              重置筛选条件
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

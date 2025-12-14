@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag, Skeleton } from 'antd'
+import { Card, Typography, Row, Col, Button, Pagination, Select, List, Space, Tag } from 'antd'
 import { ArrowRightOutlined, CheckCircleOutlined, CalendarOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
@@ -7,7 +7,8 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { fetchCases } from '@/services/content'
 import type { CaseItem } from '@/types/content'
 import ImageWithFallback from '@/components/ImageWithFallback'
-import EmptyState from '@/components/EmptyState'
+import PageEmpty from '@/components/PageEmpty'
+import PageSkeleton from '@/components/PageSkeleton'
 
 const { Title, Paragraph } = Typography
 const { Meta } = Card
@@ -29,6 +30,8 @@ const Cases: React.FC = () => {
   const [pageSize, setPageSize] = useState(6)
   const [industryType, setIndustryType] = useState<string | undefined>()
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadSeq, setReloadSeq] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
 
   const industryOptions = useMemo(() => {
@@ -43,6 +46,7 @@ const Cases: React.FC = () => {
     abortRef.current = controller
 
     setLoading(true)
+    setLoadError(null)
     fetchCases(
       {
         page: currentPage,
@@ -55,9 +59,11 @@ const Cases: React.FC = () => {
         const nextRows = resp?.data || []
         setTotal(resp?.total || 0)
         setRows((prev) => (isMobile && currentPage > 1 ? [...prev, ...nextRows] : nextRows))
+        setLoadError(null)
       })
       .catch(() => {
         if (controller.signal.aborted) return
+        setLoadError('获取案例列表失败，请稍后重试')
         setTotal(0)
         setRows((prev) => (isMobile && currentPage > 1 ? prev : []))
       })
@@ -68,7 +74,7 @@ const Cases: React.FC = () => {
       })
 
     return () => controller.abort()
-  }, [currentPage, industryType, isMobile, pageSize])
+  }, [currentPage, industryType, isMobile, pageSize, reloadSeq])
 
   const hasMore = rows.length < total
 
@@ -108,28 +114,27 @@ const Cases: React.FC = () => {
 
         {loading && rows.length === 0 ? (
           isMobile ? (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <List
-                itemLayout="horizontal"
-                dataSource={Array.from({ length: Math.min(pageSize, 6) })}
-                renderItem={(_, index) => (
-                  <List.Item className="px-4 py-4" key={index}>
-                    <Skeleton active avatar={{ shape: 'square', size: 80 }} title paragraph={{ rows: 2 }} />
-                  </List.Item>
-                )}
-              />
-            </div>
+            <PageSkeleton variant="list" count={Math.min(pageSize, 6)} />
           ) : (
-            <Row gutter={[24, 24]}>
-              {Array.from({ length: pageSize }).map((_, index) => (
-                <Col key={index} xs={24} sm={12} md={8}>
-                  <Card loading className="h-full" />
-                </Col>
-              ))}
-            </Row>
+            <PageSkeleton variant="cards" count={pageSize} />
           )
+        ) : rows.length === 0 && loadError ? (
+          <PageEmpty
+            title="加载失败"
+            description={loadError}
+            actions={
+              <Space>
+                <Button type="primary" onClick={() => setReloadSeq((v) => v + 1)}>
+                  重试
+                </Button>
+                <Link to="/contact#quote">
+                  <Button>获取报价</Button>
+                </Link>
+              </Space>
+            }
+          />
         ) : rows.length === 0 ? (
-          <EmptyState
+          <PageEmpty
             title="暂无案例"
             description="还没有发布案例内容，您可以先浏览产品或联系我们获取报价。"
             actions={

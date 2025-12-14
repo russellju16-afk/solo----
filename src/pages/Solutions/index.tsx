@@ -13,7 +13,8 @@ import { Helmet } from 'react-helmet-async'
 import { fetchSolutions } from '@/services/content'
 import type { Solution } from '@/types/content'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import EmptyState from '@/components/EmptyState'
+import PageEmpty from '@/components/PageEmpty'
+import PageSkeleton from '@/components/PageSkeleton'
 import ImageWithFallback from '@/components/ImageWithFallback'
 
 const { Title, Paragraph } = Typography
@@ -46,6 +47,8 @@ const Solutions: React.FC = () => {
   const [pageSize, setPageSize] = useState(6)
   const [channelType, setChannelType] = useState<string | undefined>()
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadSeq, setReloadSeq] = useState(0)
   const abortRef = useRef<AbortController | null>(null)
 
   const channelOptions = useMemo(() => {
@@ -62,6 +65,7 @@ const Solutions: React.FC = () => {
     abortRef.current = controller
 
     setLoading(true)
+    setLoadError(null)
     fetchSolutions(
       {
         page: currentPage,
@@ -74,9 +78,11 @@ const Solutions: React.FC = () => {
         const nextRows = resp?.data || []
         setTotal(resp?.total || 0)
         setRows((prev) => (isMobile && currentPage > 1 ? [...prev, ...nextRows] : nextRows))
+        setLoadError(null)
       })
       .catch(() => {
         if (controller.signal.aborted) return
+        setLoadError('获取解决方案列表失败，请稍后重试')
         setTotal(0)
         setRows((prev) => (isMobile && currentPage > 1 ? prev : []))
       })
@@ -85,7 +91,7 @@ const Solutions: React.FC = () => {
       })
 
     return () => controller.abort()
-  }, [channelType, currentPage, isMobile, pageSize])
+  }, [channelType, currentPage, isMobile, pageSize, reloadSeq])
 
   const hasMore = rows.length < total
 
@@ -129,15 +135,24 @@ const Solutions: React.FC = () => {
         </div>
 
         {loading && rows.length === 0 ? (
-          <Row gutter={[24, 24]}>
-            {Array.from({ length: pageSize }).map((_, index) => (
-              <Col key={index} xs={24} md={12}>
-                <Card loading className="h-full" />
-              </Col>
-            ))}
-          </Row>
+          <PageSkeleton variant="cards" count={pageSize} className="grid grid-cols-1 md:grid-cols-2 gap-6" />
+        ) : rows.length === 0 && loadError ? (
+          <PageEmpty
+            title="加载失败"
+            description={loadError}
+            actions={
+              <Space>
+                <Button type="primary" onClick={() => setReloadSeq((v) => v + 1)}>
+                  重试
+                </Button>
+                <Link to="/contact#quote">
+                  <Button>获取报价</Button>
+                </Link>
+              </Space>
+            }
+          />
         ) : rows.length === 0 ? (
-          <EmptyState
+          <PageEmpty
             title="暂无解决方案"
             description="还没有配置解决方案内容，您可以先联系我们获取定制方案。"
             actions={
