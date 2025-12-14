@@ -128,7 +128,7 @@ const ProductDetail: React.FC = () => {
   );
 
   const companyPhone = companyInfo?.phone || '029-86543210';
-  const companyEmail = companyInfo?.email || 'info@chaoqun粮油.com';
+  const companyEmail = companyInfo?.email || 'info@chaoqun-liangyou.com';
   const companyAddress = companyInfo?.address || '陕西省西安市未央区粮油批发市场';
   const wechatQr = companyInfo?.wechat_qr_code;
 
@@ -172,9 +172,9 @@ const ProductDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spin size="large" tip="加载产品详情中..." />
-      </div>
+      <Spin spinning tip="加载产品详情中..." size="large">
+        <div className="min-h-screen" />
+      </Spin>
     );
   }
 

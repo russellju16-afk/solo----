@@ -47,7 +47,9 @@ const CaseDetail: React.FC = () => {
     return (
       <div className="min-h-screen py-12">
         <div className="container mx-auto px-4">
-          <Spin spinning tip="加载中..." />
+          <Spin spinning tip="加载中...">
+            <div className="min-h-[240px]" />
+          </Spin>
         </div>
       </div>
     )

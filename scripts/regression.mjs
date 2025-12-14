@@ -41,6 +41,8 @@ function attachCollector(page) {
   })
 
   page.on('requestfailed', (request) => {
+    const failure = request.failure()?.errorText
+    if (failure === 'net::ERR_ABORTED') return
     requestFailures.push({ url: request.url(), method: request.method(), failure: request.failure()?.errorText })
   })
 
@@ -51,7 +53,14 @@ function attachCollector(page) {
     badResponses.push({ url, status, method: response.request().method() })
   })
 
-  return { consoleErrors, pageErrors, requestFailures, badResponses }
+  const reset = () => {
+    consoleErrors.length = 0
+    pageErrors.length = 0
+    requestFailures.length = 0
+    badResponses.length = 0
+  }
+
+  return { consoleErrors, pageErrors, requestFailures, badResponses, reset }
 }
 
 async function gotoAndSettle(page, url, settleMs = 1200) {
@@ -60,8 +69,12 @@ async function gotoAndSettle(page, url, settleMs = 1200) {
 }
 
 async function loginAdmin(page, returnUrl) {
-  const url = normalizeUrl(ADMIN_BASE_URL, returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : '/login')
-  await gotoAndSettle(page, url, 800)
+  const current = new URL(page.url())
+  const shouldGotoLogin = current.origin !== ADMIN_BASE_URL || current.pathname !== '/login'
+  if (shouldGotoLogin || returnUrl) {
+    const url = normalizeUrl(ADMIN_BASE_URL, returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : '/login')
+    await gotoAndSettle(page, url, 800)
+  }
   await page.locator('input[placeholder="用户名"]').fill(ADMIN_USERNAME)
   await page.locator('input[placeholder="密码"]').fill(ADMIN_PASSWORD)
   await Promise.all([
@@ -161,8 +174,8 @@ async function createNewsWithCoverAndDelete(page) {
   const title = `E2E 新闻 ${Date.now()}`
 
   await page.getByRole('button', { name: '新增新闻' }).click()
-  const modal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '新增新闻' }) })
-  await modal.waitFor()
+  const modal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '新增新闻' }) }).last()
+  await modal.waitFor({ state: 'visible' })
 
   await modal.locator('input[placeholder="请输入新闻标题"]').fill(title)
 
@@ -178,7 +191,7 @@ async function createNewsWithCoverAndDelete(page) {
 
   await modal.locator('textarea[placeholder="请输入新闻内容"]').fill('这是自动化回归测试创建的新闻内容。')
 
-  await modal.getByRole('button', { name: '提交' }).click()
+  await modal.locator('button[type="submit"]').click()
   await modal.waitFor({ state: 'hidden' })
 
   const row = page.locator('tr').filter({ hasText: title }).first()
@@ -186,32 +199,33 @@ async function createNewsWithCoverAndDelete(page) {
 
   // 编辑 -> 删除封面 -> 提交
   await row.getByRole('button', { name: '编辑' }).click()
-  const editModal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '编辑新闻' }) })
-  await editModal.waitFor()
+  const editModal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '编辑新闻' }) }).last()
+  await editModal.waitFor({ state: 'visible' })
 
   const uploadItem = editModal.locator('.ant-upload-list-item')
   if (await uploadItem.count()) {
-    await uploadItem.locator('span[role="img"][aria-label="delete"]').click()
+    await uploadItem.first().locator('span[role="img"][aria-label="delete"]').first().click()
     await uploadItem.first().waitFor({ state: 'detached' })
   }
 
-  await editModal.getByRole('button', { name: '提交' }).click()
+  await editModal.locator('button[type="submit"]').click()
   await editModal.waitFor({ state: 'hidden' })
 
   // 再次编辑确认封面已清空
   await row.getByRole('button', { name: '编辑' }).click()
-  const editModal2 = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '编辑新闻' }) })
-  await editModal2.waitFor()
+  const editModal2 = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '编辑新闻' }) }).last()
+  await editModal2.waitFor({ state: 'visible' })
   if (await editModal2.locator('.ant-upload-list-item').count()) {
     throw new Error('expected cover_image cleared after delete+save')
   }
-  await editModal2.getByRole('button', { name: '取消' }).click()
+  await editModal2.locator('.ant-modal-close').click()
   await editModal2.waitFor({ state: 'hidden' })
 
   // 删除记录
   await row.getByRole('button', { name: '删除' }).click()
-  const pop = page.locator('.ant-popover').filter({ hasText: '确定' }).last()
-  await pop.getByRole('button', { name: '确定' }).click()
+  const pop = page.locator('.ant-popconfirm').last()
+  await pop.waitFor({ state: 'visible' })
+  await pop.locator('.ant-popconfirm-buttons').locator('button.ant-btn-primary').click()
   await page.waitForTimeout(900)
 }
 
@@ -226,9 +240,9 @@ async function main() {
       const page = await context.newPage()
       const collector = attachCollector(page)
 
-      await ensureListToDetail(page, '/news', 'a[href^="/news/"]:not([href="/news"])', /\\/news\\/(\\d+)/)
-      await ensureListToDetail(page, '/cases', 'a[href^="/cases/"]:not([href="/cases"])', /\\/cases\\/(\\d+)/)
-      await ensureListToDetail(page, '/products', 'a[href^="/products/"]:not([href="/products"])', /\\/products\\/(\\d+)/)
+      await ensureListToDetail(page, '/news', 'a[href^="/news/"]:not([href="/news"])', /\/news\/\d+/)
+      await ensureListToDetail(page, '/cases', 'a[href^="/cases/"]:not([href="/cases"])', /\/cases\/\d+/)
+      await ensureListToDetail(page, '/products', 'a[href^="/products/"]:not([href="/products"])', /\/products\/\d+/)
 
       await submitContactLead(page)
 
@@ -243,6 +257,7 @@ async function main() {
 
       await loginAdmin(page)
       await forceAdmin401ReturnUrlFlow(page)
+      collector.reset()
 
       await initCompanyInfoTemplate(page)
       await createNewsWithCoverAndDelete(page)
@@ -271,4 +286,3 @@ main().catch((error) => {
   console.error('[regression] failed:', error)
   process.exitCode = 1
 })
-

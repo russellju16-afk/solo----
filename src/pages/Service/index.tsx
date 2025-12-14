@@ -193,7 +193,7 @@ const Service: React.FC = () => {
                     <MailOutlined className="text-white text-2xl" />
                   </div>
                   <Title level={5} className="mb-2 text-white">电子邮箱</Title>
-                  <Text className="block">info@chaoqun粮油.com</Text>
+                  <Text className="block">info@chaoqun-liangyou.com</Text>
                 </div>
               </Col>
               <Col xs={24} sm={12} md={6}>

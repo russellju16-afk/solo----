@@ -19,7 +19,7 @@ const Contact: React.FC = () => {
   const companyName = companyInfo?.company_name || '西安超群粮油贸易有限公司'
   const companyAddress = companyInfo?.address || '西安市未央区粮油批发市场A区12号'
   const companyPhone = companyInfo?.phone || '029-86543210'
-  const companyEmail = companyInfo?.email || 'info@chaoqun粮油.com'
+  const companyEmail = companyInfo?.email || 'info@chaoqun-liangyou.com'
   const businessHours = companyInfo?.business_hours || '周一至周五：8:00-18:00'
   const wechatQr = companyInfo?.wechat_qr_code
 

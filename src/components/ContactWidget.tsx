@@ -20,7 +20,7 @@ const ContactWidget: React.FC = () => {
   const navigate = useNavigate()
   const { companyInfo } = useCompanyInfo()
   const phone = companyInfo?.phone || '029-86543210'
-  const email = companyInfo?.email || 'info@chaoqun粮油.com'
+  const email = companyInfo?.email || 'info@chaoqun-liangyou.com'
   const wechatQr = companyInfo?.wechat_qr_code || CONTACT_PRESET_QR
 
   const [contactDrawerOpen, setContactDrawerOpen] = useState(false)

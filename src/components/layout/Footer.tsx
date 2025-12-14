@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
   const companyIntro = companyInfo?.short_description || companyInfo?.introduction || '西安本地仓储配送的粮油批发服务商，服务高校、团餐、商超、食品厂等客户。'
   const address = companyInfo?.address || '西安市未央区粮油批发市场A区12号'
   const phone = companyInfo?.phone || '029-86543210'
-  const email = companyInfo?.email || 'info@chaoqun粮油.com'
+  const email = companyInfo?.email || 'info@chaoqun-liangyou.com'
   const businessHours = companyInfo?.business_hours || '周一至周五：8:00-18:00'
 
   return (
