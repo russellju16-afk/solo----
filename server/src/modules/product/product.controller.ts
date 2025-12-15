@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
 
 // Public 路由 /api/products，Admin 路由 /api/admin/products/**（全局前缀 api）
 @Controller()
@@ -67,5 +70,49 @@ export class ProductController {
   @UseGuards(AuthGuard('jwt'))
   async updateStatus(@Param('id') id: string, @Body() body: { status: number }) {
     return this.productService.updateStatus(Number(id), body.status);
+  }
+
+  // 后台接口：下载批量导入模板（需要认证）
+  @Get('admin/products/import-template')
+  @UseGuards(AuthGuard('jwt'))
+  async downloadImportTemplate(@Res() res: Response) {
+    const buffer = await this.productService.generateImportTemplate();
+    const filename = '产品批量导入模板.xlsx';
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(filename)}`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.end(buffer);
+  }
+
+  // 后台接口：批量导入产品（需要认证）
+  @Post('admin/products/import')
+  @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+      fileFilter: (_req, file, cb) => {
+        const ext = extname(file.originalname || '').toLowerCase();
+        if (!['.xlsx', '.xls'].includes(ext)) {
+          return cb(new BadRequestException('仅支持上传 .xlsx/.xls 文件'), false);
+        }
+        return cb(null, true);
+      },
+    }),
+  )
+  async importProducts(
+    @UploadedFile() file?: Express.Multer.File,
+    @Query('commit') commit?: string,
+  ) {
+    if (!file?.buffer) {
+      throw new BadRequestException('未找到上传文件字段 file');
+    }
+    const shouldCommit = ['1', 'true', 'yes', 'y'].includes(String(commit || '').trim().toLowerCase());
+    return this.productService.importProductsFromExcel(file.buffer, {
+      commit: shouldCommit,
+      originalFilename: file.originalname,
+    });
   }
 }
