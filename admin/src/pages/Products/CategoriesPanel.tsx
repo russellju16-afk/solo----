@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Button, Form, Input, InputNumber, Modal, Popconfirm, Space, Table, Typography, message } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { categoryService } from '../../services/product';
 
 const { Title, Paragraph } = Typography;
@@ -10,7 +10,11 @@ type Props = {
   onChanged?: () => void;
 };
 
-const CategoriesPanel: React.FC<Props> = ({ onChanged }) => {
+export type CategoryPanelRef = {
+  refresh: () => Promise<void>;
+};
+
+const CategoriesPanel = React.forwardRef<CategoryPanelRef, Props>(({ onChanged }, ref) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -33,6 +37,14 @@ const CategoriesPanel: React.FC<Props> = ({ onChanged }) => {
       setLoading(false);
     }
   }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      refresh: fetchCategories,
+    }),
+    [fetchCategories],
+  );
 
   useEffect(() => {
     fetchCategories();
@@ -156,9 +168,6 @@ const CategoriesPanel: React.FC<Props> = ({ onChanged }) => {
           </Paragraph>
         </div>
         <Space>
-          <Button icon={<ReloadOutlined />} onClick={fetchCategories} loading={loading}>
-            刷新
-          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             新增分类
           </Button>
@@ -253,6 +262,8 @@ const CategoriesPanel: React.FC<Props> = ({ onChanged }) => {
       </Modal>
     </div>
   );
-};
+});
+
+CategoriesPanel.displayName = 'CategoryPanel';
 
 export default CategoriesPanel;

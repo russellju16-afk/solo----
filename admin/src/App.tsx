@@ -10,7 +10,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Analytics = lazy(() => import('./pages/Analytics'))
 const LeadsList = lazy(() => import('./pages/Leads/LeadsList'))
 const Products = lazy(() => import('./pages/Products'))
-const ProductBrands = lazy(() => import('./pages/ProductBrands'))
 const Banners = lazy(() => import('./pages/Banners'))
 const News = lazy(() => import('./pages/News'))
 const Cases = lazy(() => import('./pages/Cases'))
@@ -75,7 +74,7 @@ function App() {
                 {/* 产品相关 */}
                 <Route path="products" element={<Products />} />
                 <Route path="product-categories" element={<Navigate to="/products?tab=categories" replace />} />
-                <Route path="product-brands" element={<ProductBrands />} />
+                <Route path="product-brands" element={<Navigate to="/products?tab=brand" replace />} />
                 {/* 内容管理 */}
                 <Route path="banners" element={<Banners />} />
                 <Route path="news" element={<News />} />

@@ -9,7 +9,6 @@ import {
   BarChartOutlined,
   TeamOutlined,
   AppstoreOutlined,
-  TrademarkCircleOutlined,
   ReadOutlined,
   PictureOutlined,
   FileTextOutlined,
@@ -109,13 +108,9 @@ const MainLayout: React.FC = () => {
       label: '线索管理',
     },
     {
-      key: 'products',
+      key: '/products',
       icon: <AppstoreOutlined />,
       label: '产品管理',
-      children: [
-        { key: '/products', label: '产品库', icon: <AppstoreOutlined /> },
-        { key: '/product-brands', label: '品牌管理', icon: <TrademarkCircleOutlined /> },
-      ],
     },
     {
       key: 'content',
@@ -154,7 +149,10 @@ const MainLayout: React.FC = () => {
       .filter(key => key !== '/')
       .find(key => pathname === key || pathname.startsWith(`${key}/`))
 
-    if (matched) return matched === '/product-categories' ? '/products' : matched
+    if (matched) {
+      if (matched === '/product-categories' || matched === '/product-brands') return '/products'
+      return matched
+    }
     return pathname === '/' ? '/' : ''
   }, [pathname, routeKeys])
 
@@ -162,9 +160,6 @@ const MainLayout: React.FC = () => {
 
   React.useEffect(() => {
     const keys: string[] = []
-    if (['/products', '/product-categories', '/product-brands'].some(key => pathname === key || pathname.startsWith(`${key}/`))) {
-      keys.push('products')
-    }
     if (['/banners', '/news', '/cases', '/solutions'].some(key => pathname === key || pathname.startsWith(`${key}/`))) {
       keys.push('content')
     }

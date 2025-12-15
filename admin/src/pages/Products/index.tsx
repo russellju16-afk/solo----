@@ -1,24 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, Typography, message, Input } from 'antd';
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, TagsOutlined } from '@ant-design/icons';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Dropdown, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, Typography, message, Input } from 'antd';
+import { DeleteOutlined, EditOutlined, EyeOutlined, MoreOutlined, PlusOutlined, ReloadOutlined, SearchOutlined, TagsOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'react-router-dom';
 import { brandService, categoryService, productService } from '../../services/product';
 import ProductForm from '../../components/ProductForm';
-import CategoriesPanel from './CategoriesPanel';
+import CategoriesPanel, { type CategoryPanelRef } from './CategoriesPanel';
+import BrandPanel, { type BrandPanelRef } from './BrandPanel';
 import './index.css';
 
-const { Option } = Select;
 const { Title, Paragraph } = Typography;
 
-type ProductsTabKey = 'products' | 'categories';
+type ProductsTabKey = 'products' | 'categories' | 'brand';
 
 const normalizeTab = (value: string | null): ProductsTabKey => {
   if (value === 'categories') return 'categories';
+  if (value === 'brand') return 'brand';
   return 'products';
 };
 
-const Products: React.FC = () => {
+const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab: ProductsTabKey = useMemo(() => normalizeTab(searchParams.get('tab')), [searchParams]);
 
@@ -39,9 +40,12 @@ const Products: React.FC = () => {
   const [status, setStatus] = useState<number | undefined>();
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [headerRefreshing, setHeaderRefreshing] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<any>(null);
   const [isViewMode, setIsViewMode] = useState(false);
+  const categoryPanelRef = useRef<CategoryPanelRef | null>(null);
+  const brandPanelRef = useRef<BrandPanelRef | null>(null);
 
   const refreshCategories = useCallback(async () => {
     try {
@@ -70,6 +74,32 @@ const Products: React.FC = () => {
     refreshBrands();
   }, [refreshBrands, refreshCategories]);
 
+  const categorySelectOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        label: category?.name,
+        value: category?.id,
+      })),
+    [categories],
+  );
+
+  const brandSelectOptions = useMemo(
+    () =>
+      brands.map((brand) => ({
+        label: brand?.name,
+        value: brand?.id,
+      })),
+    [brands],
+  );
+
+  const statusSelectOptions = useMemo(
+    () => [
+      { label: '上架', value: 1 },
+      { label: '下架', value: 0 },
+    ],
+    [],
+  );
+
   useEffect(() => {
     if (!categoryId) return;
     const exists = categories.some((category: any) => category?.id === categoryId);
@@ -77,6 +107,14 @@ const Products: React.FC = () => {
     setCategoryId(undefined);
     message.warning('当前选择的品类已被删除，已自动清空筛选条件');
   }, [categories, categoryId]);
+
+  useEffect(() => {
+    if (!brandId) return;
+    const exists = brands.some((brand: any) => brand?.id === brandId);
+    if (exists) return;
+    setBrandId(undefined);
+    message.warning('当前选择的品牌已被删除，已自动清空筛选条件');
+  }, [brands, brandId]);
 
   // 获取产品列表
   const fetchProducts = useCallback(async () => {
@@ -105,6 +143,25 @@ const Products: React.FC = () => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  const handleHeaderRefresh = useCallback(async () => {
+    if (activeTab === 'products') {
+      await fetchProducts();
+      return;
+    }
+
+    setHeaderRefreshing(true);
+    try {
+      if (activeTab === 'categories') {
+        await categoryPanelRef.current?.refresh();
+      }
+      if (activeTab === 'brand') {
+        await brandPanelRef.current?.refresh();
+      }
+    } finally {
+      setHeaderRefreshing(false);
+    }
+  }, [activeTab, fetchProducts]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -166,6 +223,60 @@ const Products: React.FC = () => {
     message.success('操作成功');
   };
 
+  const ActionCell: React.FC<{ record: any }> = ({ record }) => {
+    const [open, setOpen] = useState(false);
+    const nextStatus = record?.status === 1 ? 0 : 1;
+    const statusLabel = record?.status === 1 ? '下架' : '上架';
+
+    return (
+      <Space size={6} wrap>
+        <Button type="link" icon={<EyeOutlined />} onClick={() => handleView(record)}>
+          查看
+        </Button>
+        <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+          编辑
+        </Button>
+        <Dropdown
+          trigger={['click']}
+          open={open}
+          onOpenChange={setOpen}
+          placement="bottomRight"
+          popupRender={() => (
+            <div className="products-action-dropdown" onClick={(event) => event.stopPropagation()}>
+              <Button
+                type="text"
+                block
+                onClick={() => {
+                  handleStatusChange(record.id, nextStatus);
+                  setOpen(false);
+                }}
+              >
+                {statusLabel}
+              </Button>
+              <Popconfirm
+                title="确定要删除这个产品吗？"
+                onConfirm={() => {
+                  handleDelete(record.id);
+                  setOpen(false);
+                }}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="text" danger block icon={<DeleteOutlined />} onClick={(event) => event.stopPropagation()}>
+                  删除
+                </Button>
+              </Popconfirm>
+            </div>
+          )}
+        >
+          <Button type="link" icon={<MoreOutlined />} aria-label="更多操作">
+            更多
+          </Button>
+        </Dropdown>
+      </Space>
+    );
+  };
+
   const columns = [
     {
       title: '序号',
@@ -177,18 +288,23 @@ const Products: React.FC = () => {
       title: '产品名称',
       dataIndex: 'name',
       key: 'name',
+      width: 240,
       ellipsis: true,
     },
     {
       title: '品类',
       dataIndex: 'category',
       key: 'category',
+      width: 160,
+      ellipsis: true,
       render: (category: any) => category?.name || '-',
     },
     {
       title: '品牌',
       dataIndex: 'brand',
       key: 'brand',
+      width: 160,
+      ellipsis: true,
       render: (brand: any) => brand?.name || '-',
     },
     {
@@ -207,8 +323,9 @@ const Products: React.FC = () => {
       title: '适用场景',
       dataIndex: 'applicable_scenes',
       key: 'applicable_scenes',
+      width: 240,
       render: (scenes: string[]) => (
-        <Space>
+        <Space wrap size={[4, 4]}>
           {scenes?.map((scene, index) => (
             <Tag key={index}>{scene}</Tag>
           )) || '-'}
@@ -232,30 +349,9 @@ const Products: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 220,
-      render: (record: any) => (
-        <Space size="middle">
-          <Button type="link" icon={<EyeOutlined />} onClick={() => handleView(record)}>
-            查看
-          </Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个产品吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
-          <Button type="link" onClick={() => handleStatusChange(record.id, record.status === 1 ? 0 : 1)}>
-            {record.status === 1 ? '下架' : '上架'}
-          </Button>
-        </Space>
-      ),
+      width: 300,
+      fixed: 'right' as const,
+      render: (record: any) => <ActionCell record={record} />,
     },
   ];
 
@@ -264,17 +360,28 @@ const Products: React.FC = () => {
       <div className="products-header">
         <div>
           <Title level={3} className="products-header-title">
-            产品库
+            产品管理
           </Title>
           <Paragraph className="products-header-subtitle">
-            在同一页面管理产品列表与产品分类。
+            在同一页面管理产品列表、产品分类与品牌。
           </Paragraph>
         </div>
         <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新增产品
-          </Button>
-          <Button icon={<ReloadOutlined />} onClick={fetchProducts} loading={loading}>
+          {activeTab === 'products' ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              新增产品
+            </Button>
+          ) : null}
+          {activeTab === 'brand' ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => brandPanelRef.current?.openCreate()}>
+              新增品牌
+            </Button>
+          ) : null}
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleHeaderRefresh}
+            loading={activeTab === 'products' ? loading : headerRefreshing}
+          >
             刷新
           </Button>
         </Space>
@@ -310,13 +417,10 @@ const Products: React.FC = () => {
                       value={categoryId}
                       onChange={setCategoryId}
                       allowClear
-                    >
-                      {categories.map((category) => (
-                        <Option key={category.id} value={category.id}>
-                          {category.name}
-                        </Option>
-                      ))}
-                    </Select>
+                      showSearch
+                      optionFilterProp="label"
+                      options={categorySelectOptions}
+                    />
                     <Button
                       type="link"
                       icon={<TagsOutlined />}
@@ -331,23 +435,18 @@ const Products: React.FC = () => {
                       value={brandId}
                       onChange={setBrandId}
                       allowClear
-                    >
-                      {brands.map((brand) => (
-                        <Option key={brand.id} value={brand.id}>
-                          {brand.name}
-                        </Option>
-                      ))}
-                    </Select>
+                      showSearch
+                      optionFilterProp="label"
+                      options={brandSelectOptions}
+                    />
                     <Select
                       placeholder="选择状态"
                       style={{ width: 160, minWidth: 140 }}
                       value={status}
                       onChange={setStatus}
                       allowClear
-                    >
-                      <Option value={1}>上架</Option>
-                      <Option value={0}>下架</Option>
-                    </Select>
+                      options={statusSelectOptions}
+                    />
                     <Button onClick={handleReset} disabled={loading}>
                       重置
                     </Button>
@@ -360,6 +459,7 @@ const Products: React.FC = () => {
                   dataSource={products}
                   rowKey="id"
                   loading={loading}
+                  scroll={{ x: 'max-content' }}
                   pagination={{
                     current: currentPage,
                     pageSize,
@@ -382,11 +482,17 @@ const Products: React.FC = () => {
             label: '产品分类',
             children: (
               <CategoriesPanel
+                ref={categoryPanelRef}
                 onChanged={() => {
                   refreshCategories();
                 }}
               />
             ),
+          },
+          {
+            key: 'brand',
+            label: '品牌管理',
+            children: <BrandPanel ref={brandPanelRef} brands={brands} onRefresh={refreshBrands} />,
           },
         ]}
       />
@@ -405,10 +511,12 @@ const Products: React.FC = () => {
           brands={brands}
           isViewMode={isViewMode}
           onSuccess={handleFormSuccess}
+          onRefreshCategories={refreshCategories}
+          onRefreshBrands={refreshBrands}
         />
       </Modal>
     </div>
   );
 };
 
-export default Products;
+export default ProductsPage;

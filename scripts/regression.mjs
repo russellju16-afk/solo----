@@ -112,6 +112,95 @@ async function exportLeadsAndVerifyDownload(page) {
   }
 }
 
+async function exerciseAdminProductQuickAddCategoryBrand(page) {
+  await gotoAndSettle(page, normalizeUrl(ADMIN_BASE_URL, '/products'), 1400)
+
+  const addButton = page.getByRole('button', { name: '新增产品' }).first()
+  await addButton.waitFor()
+  await addButton.click()
+
+  const modal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '新增产品' }) }).last()
+  await modal.waitFor({ state: 'visible', timeout: 8000 })
+
+  const mode = process.env.PRODUCT_QUICKADD_MODE || 'full'
+  if (mode === 'openOnly') {
+    await takeScreenshot(page, 'admin-product-add-modal-open.png', { fullPage: true })
+    await modal.locator('.ant-modal-close').click()
+    await modal.waitFor({ state: 'hidden', timeout: 8000 })
+    return
+  }
+
+  const categoryName = `E2E品类-${Date.now()}`
+  await modal.getByRole('button', { name: '新增品类' }).first().click()
+  const createCategoryModal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '新增品类' }) }).last()
+  await createCategoryModal.waitFor({ state: 'visible', timeout: 8000 })
+
+  if (mode === 'categoryOpenClose') {
+    await takeScreenshot(page, 'admin-product-category-modal-open.png', { fullPage: true })
+    await createCategoryModal.locator('.ant-modal-footer button.ant-btn:not(.ant-btn-primary)').first().click()
+    await createCategoryModal.waitFor({ state: 'hidden', timeout: 8000 })
+    await modal.locator('.ant-modal-close').click()
+    await modal.waitFor({ state: 'hidden', timeout: 8000 })
+    return
+  }
+
+  await createCategoryModal.getByPlaceholder('请输入品类名称').fill(categoryName)
+  await createCategoryModal.locator('.ant-modal-footer').locator('button.ant-btn-primary').first().click()
+  await createCategoryModal.waitFor({ state: 'hidden', timeout: 8000 })
+
+  const categoryItem = modal.locator('.ant-form-item').filter({ hasText: '品类' }).first()
+  await categoryItem.locator('.ant-select-selection-item').filter({ hasText: categoryName }).first().waitFor({ timeout: 8000 })
+
+  if (mode === 'categoryOnly') {
+    await takeScreenshot(page, 'admin-product-quick-add-category-only.png', { fullPage: true })
+    await modal.locator('.ant-modal-close').click()
+    await modal.waitFor({ state: 'hidden', timeout: 8000 })
+    return
+  }
+
+  const brandName = `E2E品牌-${Date.now()}`
+  await modal.getByRole('button', { name: '新增品牌' }).first().click()
+  const createBrandModal = page.locator('.ant-modal').filter({ has: page.locator('.ant-modal-title', { hasText: '新增品牌' }) }).last()
+  await createBrandModal.waitFor({ state: 'visible', timeout: 8000 })
+  await createBrandModal.getByPlaceholder('请输入品牌名称').fill(brandName)
+  await createBrandModal.locator('.ant-modal-footer').locator('button.ant-btn-primary').first().click()
+  await createBrandModal.waitFor({ state: 'hidden', timeout: 8000 })
+
+  const brandItem = modal.locator('.ant-form-item').filter({ hasText: '品牌' }).first()
+  await brandItem.locator('.ant-select-selection-item').filter({ hasText: brandName }).first().waitFor({ timeout: 8000 })
+
+  await takeScreenshot(page, 'admin-product-quick-add-category-brand.png', { fullPage: true })
+
+  // close modal without saving product
+  await modal.locator('.ant-modal-close').click()
+  await modal.waitFor({ state: 'hidden', timeout: 8000 })
+
+  // cleanup created category/brand (best-effort)
+  try {
+    const token = await page.evaluate(() => localStorage.getItem('solo_admin_token'))
+    if (!token) return
+
+    const headers = { Authorization: `Bearer ${token}` }
+    const apiBase = 'http://127.0.0.1:3002/api'
+
+    const catsRes = await fetch(`${apiBase}/admin/categories`, { headers })
+    const cats = catsRes.ok ? await catsRes.json() : []
+    const createdCat = Array.isArray(cats) ? cats.find((c) => c?.name === categoryName) : null
+    if (createdCat?.id) {
+      await fetch(`${apiBase}/admin/categories/${createdCat.id}`, { method: 'DELETE', headers })
+    }
+
+    const brandsRes = await fetch(`${apiBase}/admin/brands`, { headers })
+    const brands = brandsRes.ok ? await brandsRes.json() : []
+    const createdBrand = Array.isArray(brands) ? brands.find((b) => b?.name === brandName) : null
+    if (createdBrand?.id) {
+      await fetch(`${apiBase}/admin/brands/${createdBrand.id}`, { method: 'DELETE', headers })
+    }
+  } catch {
+    // ignore cleanup failure in regression
+  }
+}
+
 async function loginAdmin(page, returnUrl) {
   const current = new URL(page.url())
   const shouldGotoLogin = current.origin !== ADMIN_BASE_URL || current.pathname !== '/login'
@@ -443,6 +532,10 @@ async function main() {
       await loginAdmin(page)
       await forceAdmin401ReturnUrlFlow(page)
       collector.reset()
+
+      if (process.env.SKIP_PRODUCT_QUICKADD !== 'true') {
+        await exerciseAdminProductQuickAddCategoryBrand(page)
+      }
 
       // 2 minutes rapid menu switch should not redirect to /login
       const adminRoutes = ['/', '/leads', '/products', '/news', '/cases', '/solutions', '/banners', '/company-info']

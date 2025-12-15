@@ -60,3 +60,22 @@
   border-radius: 12px;
 }
 
+.products-table .ant-table-content {
+  overflow-x: auto;
+}
+
+.products-action-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  padding: 4px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.products-action-dropdown .ant-btn {
+  justify-content: flex-start;
+  padding-inline: 12px;
+}
