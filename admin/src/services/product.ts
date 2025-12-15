@@ -29,6 +29,34 @@ export const productService = {
   },
 }
 
+// 批量导入相关API
+export const downloadImportTemplate = async () => {
+  const blob = await http.get('/admin/products/import-template', {
+    responseType: 'blob',
+  })
+  
+  // 创建下载链接
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', '产品批量导入模板.xlsx')
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+export const importProducts = async (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  return http.post('/admin/products/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
 // 产品分类相关API
 export const categoryService = {
   // 获取分类列表

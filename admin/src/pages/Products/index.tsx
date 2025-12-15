@@ -7,6 +7,7 @@ import { brandService, categoryService, productService } from '../../services/pr
 import ProductForm from '../../components/ProductForm';
 import CategoriesPanel, { type CategoryPanelRef } from './CategoriesPanel';
 import BrandPanel, { type BrandPanelRef } from './BrandPanel';
+import ProductImportModal from './components/ProductImportModal';
 import './index.css';
 
 const { Title, Paragraph } = Typography;
@@ -44,6 +45,7 @@ const ProductsPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<any>(null);
   const [isViewMode, setIsViewMode] = useState(false);
+  const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const categoryPanelRef = useRef<CategoryPanelRef | null>(null);
   const brandPanelRef = useRef<BrandPanelRef | null>(null);
 
@@ -223,6 +225,20 @@ const ProductsPage: React.FC = () => {
     message.success('操作成功');
   };
 
+  // 批量导入相关事件处理
+  const handleImport = () => {
+    setIsImportModalVisible(true);
+  };
+
+  const handleImportCancel = () => {
+    setIsImportModalVisible(false);
+  };
+
+  const handleImportSuccess = () => {
+    fetchProducts();
+    setIsImportModalVisible(false);
+  };
+
   const ActionCell: React.FC<{ record: any }> = ({ record }) => {
     const [open, setOpen] = useState(false);
     const nextStatus = record?.status === 1 ? 0 : 1;
@@ -368,9 +384,14 @@ const ProductsPage: React.FC = () => {
         </div>
         <Space>
           {activeTab === 'products' ? (
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              新增产品
-            </Button>
+            <>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                新增产品
+              </Button>
+              <Button type="primary" onClick={handleImport}>
+                批量导入
+              </Button>
+            </>
           ) : null}
           {activeTab === 'brand' ? (
             <Button type="primary" icon={<PlusOutlined />} onClick={() => brandPanelRef.current?.openCreate()}>
@@ -515,6 +536,12 @@ const ProductsPage: React.FC = () => {
           onRefreshBrands={refreshBrands}
         />
       </Modal>
+
+      <ProductImportModal
+        visible={isImportModalVisible}
+        onCancel={handleImportCancel}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 };
